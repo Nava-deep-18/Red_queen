@@ -1,8 +1,9 @@
 import numpy as np
 import gymnasium as gym
+import random
 
 class ArenaEnv:
-    def __init__(self, width=7, height=5, max_steps=50):
+    def __init__(self, width=11, height=7, max_steps=75):
         self.width = width
         self.height = height
         self.max_steps = max_steps
@@ -24,37 +25,42 @@ class ArenaEnv:
     def reset(self):
         self.step_count = 0
         
-        # Simple obstacles list (x, y)
-        self.obstacles = [np.array([3, 1]), np.array([3, 4])]
-        self.target_pos = np.array([6, 0])
+        # Target at far right, middle height
+        self.target_pos = np.array([10, 3])
         
-        # Randomize Attacker and Defender positions
-        import random
-        def get_random_empty_pos():
+        # Build the River and 3 Bridges
+        # River is at X=5. Bridges are at Y=1, 3, 5
+        self.obstacles = []
+        for y in range(self.height):
+            if y not in [1, 3, 5]: # If not a bridge, it's an obstacle
+                self.obstacles.append(np.array([5, y]))
+        
+        # Attacker spawns on the left side (X from 0 to 3)
+        def get_attacker_spawn():
             while True:
-                pos = np.array([random.randint(0, self.width-1), random.randint(0, self.height-1)])
-                # Check if it's on an obstacle or target
-                if np.array_equal(pos, self.target_pos):
-                    continue
-                is_obstacle = False
-                for obs in self.obstacles:
-                    if np.array_equal(pos, obs):
-                        is_obstacle = True
-                if not is_obstacle:
+                pos = np.array([random.randint(0, 3), random.randint(0, self.height-1)])
+                if not any(np.array_equal(pos, obs) for obs in self.obstacles):
                     return pos
                     
-        self.attacker_pos = get_random_empty_pos()
-        self.defender_pos = get_random_empty_pos()
+        # Defender spawns on the right side patrolling the river (X from 6 to 7)
+        def get_defender_spawn():
+            while True:
+                pos = np.array([random.randint(6, 7), random.randint(0, self.height-1)])
+                if not np.array_equal(pos, self.target_pos) and not any(np.array_equal(pos, obs) for obs in self.obstacles):
+                    return pos
+
+        self.attacker_pos = get_attacker_spawn()
+        self.defender_pos = get_defender_spawn()
         
-        # Ensure they don't spawn on each other
+        # Ensure no overlap (virtually impossible given different X ranges, but safe)
         while np.array_equal(self.attacker_pos, self.defender_pos):
-            self.defender_pos = get_random_empty_pos()
+            self.defender_pos = get_defender_spawn()
         
         return self._get_state()
 
     def _get_state(self):
         # Flattened state vector: [ax, ay, dx, dy, tx, ty]
-        # In a real DL model, we'd normalize these coordinates
+        # Normalized by width/height
         return np.array([
             self.attacker_pos[0] / self.width, self.attacker_pos[1] / self.height,
             self.defender_pos[0] / self.width, self.defender_pos[1] / self.height,
@@ -109,10 +115,10 @@ class ArenaEnv:
         return self._get_state(), (reward_attacker, reward_defender), done, info
 
     def render(self):
-        grid = [['·' for _ in range(self.width)] for _ in range(self.height)]
+        grid = [['⬜' for _ in range(self.width)] for _ in range(self.height)]
         
         for obs in self.obstacles:
-            grid[obs[1]][obs[0]] = '🧱'
+            grid[obs[1]][obs[0]] = '🟦'
             
         grid[self.target_pos[1]][self.target_pos[0]] = '🎯'
         
@@ -120,8 +126,8 @@ class ArenaEnv:
         if np.array_equal(self.attacker_pos, self.defender_pos):
             grid[self.defender_pos[1]][self.defender_pos[0]] = '💥'
         else:
-            grid[self.defender_pos[1]][self.defender_pos[0]] = '🔵'
-            grid[self.attacker_pos[1]][self.attacker_pos[0]] = '🔴'
+            grid[self.defender_pos[1]][self.defender_pos[0]] = '🛡️'
+            grid[self.attacker_pos[1]][self.attacker_pos[0]] = '😈'
             
         print("\nArena State:")
         for row in grid:

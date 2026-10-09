@@ -5,9 +5,9 @@ class ReplayLogger:
     def __init__(self, filename):
         self.filename = filename
         self.data = {
-            "grid_size": [7, 5],
-            "obstacles": [[3, 1], [3, 4]],
-            "target": [6, 0],
+            "grid_size": [11, 7],
+            "obstacles": [[5, 0], [5, 2], [5, 4], [5, 6]],
+            "target": [10, 3],
             "episodes": {}
         }
         os.makedirs(os.path.dirname(filename), exist_ok=True)

@@ -87,7 +87,16 @@ def main():
             replay_logger.log_step(str(episode+1), env.attacker_pos, env.defender_pos)
             
             if train_attacker:
-                attacker.store_reward(rewards[0], done)
+                # Distance-based shaping reward for Attacker
+                old_x, old_y = state[0]*env.width, state[1]*env.height
+                new_x, new_y = next_state[0]*env.width, next_state[1]*env.height
+                tx, ty = state[4]*env.width, state[5]*env.height
+                
+                old_dist = abs(old_x - tx) + abs(old_y - ty)
+                new_dist = abs(new_x - tx) + abs(new_y - ty)
+                att_dist_reward = (old_dist - new_dist) * 0.5
+                
+                attacker.store_reward(rewards[0] + att_dist_reward, done)
             if train_defender:
                 defender.store_reward(rewards[1], done)
             
