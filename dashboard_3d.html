@@ -50,13 +50,13 @@
     ------------------------------------------------------------- */
     .top-bar-container {
       position: absolute;
-      top: 12px;
-      left: 14px;
-      right: 14px;
+      top: 6px;
+      left: 10px;
+      right: 10px;
       z-index: 20;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 5px;
       pointer-events: none;
     }
 
@@ -65,13 +65,13 @@
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 8px;
       background: var(--panel-bg);
       backdrop-filter: blur(14px);
-      padding: 8px 16px;
-      border-radius: 12px;
+      padding: 5px 12px;
+      border-radius: 10px;
       border: 1px solid var(--border-color);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
       pointer-events: auto;
     }
 
@@ -201,13 +201,13 @@
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 8px;
       background: rgba(15, 23, 42, 0.9);
       backdrop-filter: blur(10px);
-      padding: 6px 16px;
-      border-radius: 10px;
+      padding: 4px 12px;
+      border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 0.76rem;
+      font-size: 0.72rem;
       pointer-events: auto;
     }
 
@@ -300,13 +300,13 @@
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 8px;
       background: var(--panel-bg);
       backdrop-filter: blur(14px);
-      padding: 6px 16px;
-      border-radius: 10px;
+      padding: 4px 12px;
+      border-radius: 8px;
       border: 1px solid var(--border-color);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
       pointer-events: auto;
     }
 
@@ -447,7 +447,7 @@
         <div class="legend-tag"><div class="legend-dot" style="background: var(--accent-blue)"></div><span>Defender</span></div>
         <div class="legend-tag"><div class="legend-dot" style="background: var(--accent-gold)"></div><span>Citadel</span></div>
         <div class="legend-tag"><div class="legend-dot" style="background: var(--accent-purple)"></div><span>3 Bridges</span></div>
-        <span class="camera-help">| 🖱️ Drag to rotate, scroll to zoom</span>
+        <span class="camera-help">| 🖱️ Drag on board to rotate</span>
       </div>
     </div>
 
@@ -507,7 +507,7 @@
     scene.fog = new THREE.FogExp2(0x0a0e17, 0.022);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(10.5, 24, 21);
+    camera.position.set(10.5, 23, 19);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -523,6 +523,7 @@
     controls.maxPolarAngle = Math.PI / 2.15;
     controls.minDistance = 8;
     controls.maxDistance = 60;
+    controls.enableZoom = false; // Disable wheel zoom so mouse wheel scrolls the page naturally
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
@@ -735,6 +736,38 @@
     defRing.position.y = 0.05;
     defenderGroup.add(defRing);
     scene.add(defenderGroup);
+
+    // -------------------------------------------------------------
+    // Targeted Board Rotation: Only rotate when dragging directly ON the board!
+    // -------------------------------------------------------------
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects([groundGroup, attackerGroup, defenderGroup], true);
+      // Only enable OrbitControls if the cursor is directly touching the board!
+      controls.enabled = (hits.length > 0);
+    }, true);
+
+    window.addEventListener('pointerup', () => {
+      controls.enabled = true;
+    });
+
+    renderer.domElement.addEventListener('pointermove', (e) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects([groundGroup, attackerGroup, defenderGroup], true);
+      renderer.domElement.style.cursor = (hits.length > 0) ? 'grab' : 'default';
+    });
 
     let attTargetPos = new THREE.Vector3(0, 0, 0);
     let defTargetPos = new THREE.Vector3(0, 0, 0);
