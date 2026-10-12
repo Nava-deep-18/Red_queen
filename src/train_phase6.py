@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import torch
 import random
 import copy
 
@@ -24,9 +25,9 @@ def main():
     attacker_archive = []
     
     update_timestep = 2000
-    num_episodes = 5000
-    archive_interval = 200 # Save agents to archive every 200 episodes
-    time_step = 0
+    num_episodes = 2500
+    archive_interval = 150 # Save agents to archive every 150 episodes after warmup
+    warmup_episodes = 500
     
     att_win_rates = []
     recent_att_wins = []
@@ -50,21 +51,19 @@ def main():
         active_attacker = attacker
         active_defender = defender
         
-        if mode < 0.2 and len(defender_archive) > 0:
+        if mode < 0.25 and len(defender_archive) > 0:
             active_defender = PPOAgent(state_dim, action_dim)
             active_defender.policy.load_state_dict(random.choice(defender_archive))
             active_defender.policy_old.load_state_dict(active_defender.policy.state_dict())
             train_defender = False
             
-        elif mode < 0.4 and len(attacker_archive) > 0:
+        elif mode < 0.50 and len(attacker_archive) > 0:
             active_attacker = PPOAgent(state_dim, action_dim)
             active_attacker.policy.load_state_dict(random.choice(attacker_archive))
             active_attacker.policy_old.load_state_dict(active_attacker.policy.state_dict())
             train_attacker = False
             
         while not done:
-            time_step += 1
-            
             # Select actions
             if train_attacker:
                 att_action = attacker.select_action(state)
@@ -87,33 +86,43 @@ def main():
             replay_logger.log_step(str(episode+1), env.attacker_pos, env.defender_pos)
             
             if train_attacker:
-                # Distance-based shaping reward for Attacker
+                # Distance-based shaping reward for Attacker (Unbiased across all 3 bridges)
                 old_x, old_y = state[0]*env.width, state[1]*env.height
                 new_x, new_y = next_state[0]*env.width, next_state[1]*env.height
                 tx, ty = state[4]*env.width, state[5]*env.height
                 
-                old_dist = abs(old_x - tx) + abs(old_y - ty)
-                new_dist = abs(new_x - tx) + abs(new_y - ty)
+                def calc_dist(x, y):
+                    if x <= 4:
+                        return min(abs(x - 4) + abs(y - by) for by in [1, 3, 5]) + 6
+                    else:
+                        return abs(x - tx) + abs(y - ty)
+                
+                old_dist = calc_dist(old_x, old_y)
+                new_dist = calc_dist(new_x, new_y)
                 att_dist_reward = (old_dist - new_dist) * 0.5
                 
-                attacker.store_reward(rewards[0] + att_dist_reward, done)
+                # Bonus for breaking through across the river safely
+                breakthrough_bonus = 1.0 if (old_x <= 5 and new_x >= 6 and not info['caught']) else 0.0
+                
+                attacker.store_reward(rewards[0] + att_dist_reward + breakthrough_bonus, done)
+                
             if train_defender:
                 defender.store_reward(rewards[1], done)
             
             state = next_state
             
-            # Update current agents
-            if time_step % update_timestep == 0:
+            # Update agents when their individual buffers are ready
+            if train_attacker and len(attacker.rewards) >= update_timestep:
                 attacker.update()
+            if train_defender and len(defender.rewards) >= update_timestep:
                 defender.update()
-                time_step = 0
                 
-        # Save to archive occasionally
-        if (episode + 1) % archive_interval == 0:
+        # Save mature agents to archive
+        if (episode + 1) >= warmup_episodes and (episode + 1) % archive_interval == 0:
             defender_archive.append(copy.deepcopy(defender.policy.state_dict()))
             attacker_archive.append(copy.deepcopy(attacker.policy.state_dict()))
                 
-        # Track win rates (only track when Attacker is actually training to get its true learning curve)
+        # Track win rates (only track when Attacker is actually training)
         if train_attacker:
             recent_att_wins.append(1 if info['reached_target'] else 0)
             
@@ -135,6 +144,9 @@ def main():
     plt.legend()
     
     os.makedirs("docs", exist_ok=True)
+    os.makedirs("models", exist_ok=True)
+    torch.save(attacker.policy.state_dict(), "models/phase6_attacker.pth")
+    
     replay_logger.save()
     plt.savefig("docs/phase6_archive_curve.png")
     print("\nTraining complete! Saved learning curve to docs/phase6_archive_curve.png")

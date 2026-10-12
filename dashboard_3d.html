@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red Queen MARL - 3D Tactical Arena</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0a0e17;
+      --panel-bg: rgba(15, 23, 42, 0.94);
+      --accent-red: #ff3366;
+      --accent-blue: #00d2ff;
+      --accent-gold: #ffd200;
+      --accent-green: #00ff88;
+      --accent-purple: #c084fc;
+      --text-main: #f8fafc;
+      --text-dim: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+    }
+
+    #webgl-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* -------------------------------------------------------------
+       1. Top Control Bar (Clean, Unified, Never blocks the board)
+    ------------------------------------------------------------- */
+    .top-bar-container {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      right: 14px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .top-command-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      pointer-events: auto;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title {
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #ff3366, #ff9933, #00d2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .selectors-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .select-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    select {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    select:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    select option {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .ep-input-box {
+      width: 75px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .ep-input-box:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 8px rgba(0, 210, 255, 0.4);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .ep-nav-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 4px 9px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .ep-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.8px;
+    }
+
+    .badge-p3 {
+      background: rgba(0, 210, 255, 0.2);
+      color: var(--accent-blue);
+      border: 1px solid rgba(0, 210, 255, 0.5);
+    }
+
+    .badge-p4 {
+      background: rgba(255, 51, 102, 0.2);
+      color: var(--accent-red);
+      border: 1px solid rgba(255, 51, 102, 0.5);
+    }
+
+    .badge-p6 {
+      background: rgba(0, 255, 136, 0.2);
+      color: var(--accent-green);
+      border: 1px solid rgba(0, 255, 136, 0.5);
+    }
+
+    /* -------------------------------------------------------------
+       2. Slim Telemetry Strip (HORIZONTAL - ZERO BOARD OBSTRUCTION!)
+    ------------------------------------------------------------- */
+    .telemetry-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 6px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.76rem;
+      pointer-events: auto;
+    }
+
+    .telemetry-items {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .t-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .t-label {
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .t-val {
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    .outcome-pill {
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 0.72rem;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .outcome-win {
+      background: rgba(0, 255, 136, 0.2);
+      color: var(--accent-green);
+      border: 1px solid rgba(0, 255, 136, 0.5);
+    }
+
+    .outcome-caught {
+      background: rgba(255, 51, 102, 0.2);
+      color: var(--accent-red);
+      border: 1px solid rgba(255, 51, 102, 0.5);
+    }
+
+    .outcome-timeout {
+      background: rgba(255, 210, 0, 0.2);
+      color: var(--accent-gold);
+      border: 1px solid rgba(255, 210, 0, 0.5);
+    }
+
+    .outcome-running {
+      background: rgba(0, 210, 255, 0.2);
+      color: var(--accent-blue);
+      border: 1px solid rgba(0, 210, 255, 0.5);
+    }
+
+    .legend-strip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-dim);
+      font-size: 0.72rem;
+    }
+
+    .legend-tag {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .camera-help {
+      color: #64748b;
+      font-size: 0.7rem;
+    }
+
+    /* -------------------------------------------------------------
+       3. Top Playback Controls Bar
+    ------------------------------------------------------------- */
+    .playback-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      padding: 6px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+      pointer-events: auto;
+    }
+
+    .playback-controls-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-play {
+      background: linear-gradient(135deg, #00d2ff, #0077ff);
+      color: #fff;
+      border: none;
+      min-width: 80px;
+      justify-content: center;
+    }
+
+    .btn-play:hover {
+      background: linear-gradient(135deg, #33dcff, #1a85ff);
+      box-shadow: 0 0 14px rgba(0, 210, 255, 0.5);
+    }
+
+    .scrubber-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 150px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 210, 255, 0.8);
+      transition: all 0.2s;
+    }
+  </style>
+</head>
+<body>
+  <!-- 3D Canvas -->
+  <div id="webgl-canvas"></div>
+
+  <!-- Top Container: Header + Horizontal Telemetry (Nothing on top of board!) -->
+  <div class="top-bar-container">
+    <!-- Header Command Bar -->
+    <div class="top-command-bar">
+      <div class="brand-section">
+        <div class="brand-title">⚔️ RED QUEEN 3D ARENA</div>
+      </div>
+
+      <div class="selectors-group">
+        <!-- Simulation Mode Selector -->
+        <div class="select-item">
+          <span>Mode:</span>
+          <select id="mode-select">
+            <option value="doublearchive" selected>🛡️ Double Archive (Nash Equilibrium)</option>
+            <option value="redqueen">🔄 Red Queen Multi-Agent (Self-Play)</option>
+            <option value="fixed">🎯 Fixed Baseline</option>
+          </select>
+        </div>
+
+        <!-- Episode Selector: Direct Number Input + Prev/Next + Quick Jump -->
+        <div class="select-item">
+          <span>Episode:</span>
+          <button class="ep-nav-btn" id="btn-ep-prev" title="Previous Episode">◀</button>
+          <input type="number" id="ep-input" class="ep-input-box" min="1" value="1" title="Type any episode number and press Enter">
+          <span id="ep-max-label" style="font-size: 0.75rem; color: var(--text-dim); font-weight: 700;">/ 1500</span>
+          <button class="ep-nav-btn" id="btn-ep-next" title="Next Episode">▶</button>
+          <button class="ep-nav-btn" id="btn-ep-final" style="background: rgba(0, 210, 255, 0.15); border-color: rgba(0, 210, 255, 0.4);" title="Jump to final trained policy">🚀 Final Ep</button>
+        </div>
+
+        <div id="active-badge" class="badge badge-p6">NASH EQUILIBRIUM ACTIVE</div>
+      </div>
+    </div>
+
+    <!-- Top Playback Controls Bar (Directly at top - No Scrolling Needed!) -->
+    <div class="playback-bar">
+      <div class="playback-controls-group">
+        <button class="btn btn-play" id="btn-play">▶ Play</button>
+        <button class="btn" id="btn-prev">⏮ Step</button>
+        <button class="btn" id="btn-next">⏭ Step</button>
+
+        <div class="scrubber-group">
+          <span>Scrub:</span>
+          <input type="range" id="step-slider" min="0" max="100" value="0">
+        </div>
+
+        <div class="scrubber-group">
+          <span>Speed:</span>
+          <select id="speed-select">
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1.0x</option>
+            <option value="2">2.0x</option>
+            <option value="4">4.0x</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="legend-strip">
+        <div class="legend-tag"><div class="legend-dot" style="background: var(--accent-red)"></div><span>Attacker</span></div>
+        <div class="legend-tag"><div class="legend-dot" style="background: var(--accent-blue)"></div><span>Defender</span></div>
+        <div class="legend-tag"><div class="legend-dot" style="background: var(--accent-gold)"></div><span>Citadel</span></div>
+        <div class="legend-tag"><div class="legend-dot" style="background: var(--accent-purple)"></div><span>3 Bridges</span></div>
+        <span class="camera-help">| 🖱️ Drag to rotate, scroll to zoom</span>
+      </div>
+    </div>
+
+    <!-- Horizontal Telemetry Strip -->
+    <div class="telemetry-strip">
+      <div class="telemetry-items">
+        <div class="t-item"><span class="t-label">Step:</span> <span class="t-val" id="hud-step">0 / 0</span></div>
+        <div class="t-item"><span class="t-label">🔴 Attacker:</span> <span class="t-val" id="hud-att" style="color: var(--accent-red)">[-, -]</span></div>
+        <div class="t-item"><span class="t-label">🔵 Defender:</span> <span class="t-val" id="hud-def" style="color: var(--accent-blue)">[-, -]</span></div>
+        <div class="t-item"><span class="t-label">🟣 Channel:</span> <span class="t-val" id="hud-bridge" style="color: var(--accent-gold)">Approaching River</span></div>
+        <div class="outcome-pill outcome-running" id="outcome-badge">READY</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Injection Target -->
+  /* __EMBEDDED_REPLAY_DATA__ */
+
+  <script>
+    // Configuration
+    const GRID_W = 11;
+    const GRID_H = 7;
+    const CELL_SIZE = 2.0;
+    const RIVER_X = 5;
+    const BRIDGES_Y = [1, 3, 5];
+    const OBSTACLES_Y = [0, 2, 4, 6];
+    const TARGET = [10, 3];
+
+    const MODE_FILES = {
+      fixed: "replays/fixed_opponent.json",
+      redqueen: "replays/red_queen.json",
+      doublearchive: "replays/red_queen_history.json"
+    };
+
+    const MODE_INFO = {
+      fixed: { text: "FIXED BASELINE ACTIVE", cls: "badge badge-p3" },
+      redqueen: { text: "RED QUEEN SELF-PLAY (CYCLIC)", cls: "badge badge-p4" },
+      doublearchive: { text: "NASH EQUILIBRIUM ACTIVE", cls: "badge badge-p6" }
+    };
+
+    // State Variables
+    let currentMode = "doublearchive";
+    let replayData = null;
+    let currentEpisodes = [];
+    let currentEpKey = "1";
+    let currentSteps = [];
+    let currentStepIdx = 0;
+    let isPlaying = false;
+    let playbackSpeed = 1.0;
+    let lastTickTime = performance.now();
+    let tickAccumulator = 0;
+
+    // Three.js Core Setup
+    const container = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0e17);
+    scene.fog = new THREE.FogExp2(0x0a0e17, 0.022);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(10.5, 24, 21);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(RIVER_X * CELL_SIZE, 0, 3 * CELL_SIZE);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2.15;
+    controls.minDistance = 8;
+    controls.maxDistance = 60;
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfff5e6, 0.95);
+    dirLight.position.set(15, 30, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 5;
+    dirLight.shadow.camera.far = 60;
+    dirLight.shadow.camera.left = -20;
+    dirLight.shadow.camera.right = 20;
+    dirLight.shadow.camera.top = 20;
+    dirLight.shadow.camera.bottom = -20;
+    scene.add(dirLight);
+
+    const blueLight = new THREE.PointLight(0x00d2ff, 1.2, 30);
+    blueLight.position.set(RIVER_X * CELL_SIZE, 6, 3 * CELL_SIZE);
+    scene.add(blueLight);
+
+    const goldLight = new THREE.PointLight(0xffd200, 1.5, 25);
+    goldLight.position.set(TARGET[0] * CELL_SIZE, 5, TARGET[1] * CELL_SIZE);
+    scene.add(goldLight);
+
+    function gridToWorld(gx, gy) {
+      return {
+        x: gx * CELL_SIZE,
+        z: gy * CELL_SIZE
+      };
+    }
+
+    // -------------------------------------------------------------
+    // Build 3D Arena
+    // -------------------------------------------------------------
+    const groundGroup = new THREE.Group();
+    scene.add(groundGroup);
+
+    const tileGeo = new THREE.BoxGeometry(CELL_SIZE - 0.1, 0.4, CELL_SIZE - 0.1);
+    for (let x = 0; x < GRID_W; x++) {
+      for (let y = 0; y < GRID_H; y++) {
+        if (x === RIVER_X) continue;
+
+        const isLeft = x < RIVER_X;
+        const color = isLeft ? 0x1a2332 : 0x1f293d;
+        const mat = new THREE.MeshStandardMaterial({
+          color: color,
+          roughness: 0.6,
+          metalness: 0.2
+        });
+        const tile = new THREE.Mesh(tileGeo, mat);
+        const wpos = gridToWorld(x, y);
+        tile.position.set(wpos.x, -0.2, wpos.z);
+        tile.receiveShadow = true;
+        groundGroup.add(tile);
+      }
+    }
+
+    // River Water Plane
+    const riverGeo = new THREE.PlaneGeometry(CELL_SIZE * 1.05, GRID_H * CELL_SIZE + 2);
+    const riverMat = new THREE.MeshPhysicalMaterial({
+      color: 0x0066aa,
+      transparent: true,
+      opacity: 0.85,
+      roughness: 0.1,
+      metalness: 0.4,
+      transmission: 0.6,
+      ior: 1.33
+    });
+    const river = new THREE.Mesh(riverGeo, riverMat);
+    river.rotation.x = -Math.PI / 2;
+    river.position.set(RIVER_X * CELL_SIZE, -0.25, (GRID_H * CELL_SIZE * 0.5) - (CELL_SIZE * 0.5));
+    groundGroup.add(river);
+
+    // River Bed
+    const bedGeo = new THREE.BoxGeometry(CELL_SIZE, 0.3, GRID_H * CELL_SIZE);
+    const bedMat = new THREE.MeshStandardMaterial({ color: 0x06101e, roughness: 0.9 });
+    const bed = new THREE.Mesh(bedGeo, bedMat);
+    bed.position.set(RIVER_X * CELL_SIZE, -0.4, (GRID_H * CELL_SIZE * 0.5) - (CELL_SIZE * 0.5));
+    groundGroup.add(bed);
+
+    // 4 Obstacle Pillars
+    const towerGeo = new THREE.CylinderGeometry(0.7, 0.85, 2.2, 8);
+    const towerMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8, metalness: 0.2 });
+    OBSTACLES_Y.forEach(oy => {
+      const tower = new THREE.Mesh(towerGeo, towerMat);
+      const wpos = gridToWorld(RIVER_X, oy);
+      tower.position.set(wpos.x, 0.9, wpos.z);
+      tower.castShadow = true;
+      tower.receiveShadow = true;
+      groundGroup.add(tower);
+
+      const capGeo = new THREE.ConeGeometry(0.7, 0.8, 8);
+      const capMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+      const cap = new THREE.Mesh(capGeo, capMat);
+      cap.position.set(wpos.x, 2.3, wpos.z);
+      cap.castShadow = true;
+      groundGroup.add(cap);
+    });
+
+    // 3 Stone Bridges
+    BRIDGES_Y.forEach(by => {
+      const bridgeGroup = new THREE.Group();
+      const wpos = gridToWorld(RIVER_X, by);
+      bridgeGroup.position.set(wpos.x, 0.1, wpos.z);
+
+      const deckGeo = new THREE.BoxGeometry(CELL_SIZE + 0.2, 0.25, CELL_SIZE * 0.85);
+      const deckMat = new THREE.MeshStandardMaterial({ color: 0x7c3aed, roughness: 0.5 });
+      const deck = new THREE.Mesh(deckGeo, deckMat);
+      deck.castShadow = true;
+      deck.receiveShadow = true;
+      bridgeGroup.add(deck);
+
+      const railGeo = new THREE.BoxGeometry(CELL_SIZE + 0.2, 0.35, 0.1);
+      const railMat = new THREE.MeshStandardMaterial({ color: 0xa78bfa, metalness: 0.5, roughness: 0.4 });
+      const railN = new THREE.Mesh(railGeo, railMat);
+      railN.position.set(0, 0.25, -CELL_SIZE * 0.4);
+      const railS = new THREE.Mesh(railGeo, railMat);
+      railS.position.set(0, 0.25, CELL_SIZE * 0.4);
+      bridgeGroup.add(railN);
+      bridgeGroup.add(railS);
+
+      groundGroup.add(bridgeGroup);
+    });
+
+    // Target Base at (10, 3)
+    const targetGroup = new THREE.Group();
+    const twpos = gridToWorld(TARGET[0], TARGET[1]);
+    targetGroup.position.set(twpos.x, 0, twpos.z);
+
+    const pedGeo = new THREE.CylinderGeometry(1.0, 1.2, 0.6, 16);
+    const pedMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.6 });
+    const pedestal = new THREE.Mesh(pedGeo, pedMat);
+    pedestal.position.y = 0.2;
+    pedestal.castShadow = true;
+    targetGroup.add(pedestal);
+
+    const gemGeo = new THREE.OctahedronGeometry(0.7, 0);
+    const gemMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffd200,
+      emissive: 0xffa500,
+      emissiveIntensity: 0.7,
+      roughness: 0.1,
+      metalness: 0.8,
+      clearcoat: 1.0
+    });
+    const gem = new THREE.Mesh(gemGeo, gemMat);
+    gem.position.y = 1.6;
+    gem.castShadow = true;
+    targetGroup.add(gem);
+    groundGroup.add(targetGroup);
+
+    // Agents
+    const attackerGroup = new THREE.Group();
+    const attBodyGeo = new THREE.ConeGeometry(0.55, 1.1, 8);
+    const attBodyMat = new THREE.MeshStandardMaterial({
+      color: 0xff3366,
+      emissive: 0x990033,
+      emissiveIntensity: 0.5,
+      roughness: 0.3,
+      metalness: 0.7
+    });
+    const attBody = new THREE.Mesh(attBodyGeo, attBodyMat);
+    attBody.position.y = 0.8;
+    attBody.rotation.x = Math.PI;
+    attBody.castShadow = true;
+    attackerGroup.add(attBody);
+
+    const attHeadGeo = new THREE.SphereGeometry(0.35, 16, 16);
+    const attHeadMat = new THREE.MeshStandardMaterial({ color: 0xff88aa, roughness: 0.2 });
+    const attHead = new THREE.Mesh(attHeadGeo, attHeadMat);
+    attHead.position.y = 1.35;
+    attHead.castShadow = true;
+    attackerGroup.add(attHead);
+
+    const attRingGeo = new THREE.TorusGeometry(0.7, 0.05, 8, 24);
+    const attRingMat = new THREE.MeshBasicMaterial({ color: 0xff3366 });
+    const attRing = new THREE.Mesh(attRingGeo, attRingMat);
+    attRing.rotation.x = Math.PI / 2;
+    attRing.position.y = 0.05;
+    attackerGroup.add(attRing);
+    scene.add(attackerGroup);
+
+    const defenderGroup = new THREE.Group();
+    const defBodyGeo = new THREE.CylinderGeometry(0.45, 0.55, 1.2, 8);
+    const defBodyMat = new THREE.MeshStandardMaterial({
+      color: 0x00d2ff,
+      emissive: 0x0066aa,
+      emissiveIntensity: 0.5,
+      roughness: 0.3,
+      metalness: 0.7
+    });
+    const defBody = new THREE.Mesh(defBodyGeo, defBodyMat);
+    defBody.position.y = 0.7;
+    defBody.castShadow = true;
+    defenderGroup.add(defBody);
+
+    const defHeadGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+    const defHeadMat = new THREE.MeshStandardMaterial({ color: 0xa5f3fc, roughness: 0.2 });
+    const defHead = new THREE.Mesh(defHeadGeo, defHeadMat);
+    defHead.position.y = 1.4;
+    defHead.castShadow = true;
+    defenderGroup.add(defHead);
+
+    const defRingGeo = new THREE.TorusGeometry(0.7, 0.05, 8, 24);
+    const defRingMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff });
+    const defRing = new THREE.Mesh(defRingGeo, defRingMat);
+    defRing.rotation.x = Math.PI / 2;
+    defRing.position.y = 0.05;
+    defenderGroup.add(defRing);
+    scene.add(defenderGroup);
+
+    let attTargetPos = new THREE.Vector3(0, 0, 0);
+    let defTargetPos = new THREE.Vector3(0, 0, 0);
+
+    // -------------------------------------------------------------
+    // UI Controls Bindings
+    // -------------------------------------------------------------
+    const modeSelect = document.getElementById('mode-select');
+    const epInput = document.getElementById('ep-input');
+    const epMaxLabel = document.getElementById('ep-max-label');
+    const btnEpPrev = document.getElementById('btn-ep-prev');
+    const btnEpNext = document.getElementById('btn-ep-next');
+    const btnEpFinal = document.getElementById('btn-ep-final');
+    const activeBadge = document.getElementById('active-badge');
+
+    const stepSlider = document.getElementById('step-slider');
+    const btnPlay = document.getElementById('btn-play');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const speedSelect = document.getElementById('speed-select');
+
+    const hudStep = document.getElementById('hud-step');
+    const hudAtt = document.getElementById('hud-att');
+    const hudDef = document.getElementById('hud-def');
+    const hudBridge = document.getElementById('hud-bridge');
+    const outcomeBadge = document.getElementById('outcome-badge');
+
+    async function loadReplay(modeKey) {
+      currentMode = modeKey;
+      modeSelect.value = modeKey;
+      
+      const info = MODE_INFO[modeKey] || MODE_INFO.doublearchive;
+      activeBadge.className = info.cls;
+      activeBadge.textContent = info.text;
+
+      // 1. Check window.ALL_REPLAYS first (injected by Streamlit!)
+      if (window.ALL_REPLAYS && window.ALL_REPLAYS[modeKey] && window.ALL_REPLAYS[modeKey].episodes) {
+        replayData = window.ALL_REPLAYS[modeKey];
+        initReplayData();
+        return;
+      }
+
+      // 2. Check window.EMBEDDED_REPLAY
+      if (window.EMBEDDED_REPLAY && window.EMBEDDED_REPLAY.episodes) {
+        replayData = window.EMBEDDED_REPLAY;
+        initReplayData();
+        return;
+      }
+
+      // 3. Fallback to HTTP fetch
+      const filename = MODE_FILES[modeKey] || MODE_FILES.doublearchive;
+      try {
+        const resp = await fetch(filename);
+        if (!resp.ok) throw new Error("Fetch failed");
+        replayData = await resp.json();
+      } catch (err) {
+        console.warn("Could not fetch replay via HTTP, using fallback procedural data...", err);
+        replayData = generateFallbackReplay();
+      }
+      initReplayData();
+    }
+
+    function initReplayData() {
+      // Sort all episodes numerically: 1, 2, ... 10, ... 2500
+      currentEpisodes = Object.keys(replayData.episodes)
+        .map(Number)
+        .sort((a, b) => a - b)
+        .map(String);
+
+      const minEp = currentEpisodes[0];
+      const maxEp = currentEpisodes[currentEpisodes.length - 1];
+
+      epInput.min = minEp;
+      epInput.max = maxEp;
+      epMaxLabel.textContent = `/ ${maxEp}`;
+
+      // Default to final trained episode
+      loadEpisode(maxEp, /* snapImmediately = */ true);
+    }
+
+    function loadEpisode(epKey, snapImmediately = true) {
+      epKey = String(epKey).trim();
+      
+      // If requested episode is not in dictionary, clamp to nearest valid key
+      if (!replayData.episodes[epKey]) {
+        const targetNum = parseInt(epKey, 10);
+        if (!isNaN(targetNum)) {
+          let closest = currentEpisodes[0];
+          let minDiff = 9999999;
+          for (const ep of currentEpisodes) {
+            const diff = Math.abs(parseInt(ep, 10) - targetNum);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closest = ep;
+            }
+          }
+          epKey = closest;
+        } else {
+          epKey = currentEpisodes[0];
+        }
+      }
+
+      currentEpKey = epKey;
+      epInput.value = currentEpKey;
+      currentSteps = replayData.episodes[epKey] || [];
+      stepSlider.max = Math.max(0, currentSteps.length - 1);
+      stepSlider.value = 0;
+
+      // Reset playback state
+      isPlaying = false;
+      btnPlay.textContent = "▶ Play";
+
+      // Instantly position the avatars at Step 0 of the new episode!
+      setStep(0, snapImmediately);
+    }
+
+    function setStep(idx, snapImmediately = false) {
+      if (!currentSteps || currentSteps.length === 0) return;
+      currentStepIdx = Math.max(0, Math.min(idx, currentSteps.length - 1));
+      stepSlider.value = currentStepIdx;
+
+      const frame = currentSteps[currentStepIdx];
+      const ax = frame.attacker[0];
+      const ay = frame.attacker[1];
+      const dx = frame.defender[0];
+      const dy = frame.defender[1];
+
+      const awpos = gridToWorld(ax, ay);
+      const dwpos = gridToWorld(dx, dy);
+
+      attTargetPos.set(awpos.x, 0, awpos.z);
+      defTargetPos.set(dwpos.x, 0, dwpos.z);
+
+      // Snap immediately if requested (e.g. changing episodes)
+      if (snapImmediately) {
+        attackerGroup.position.set(awpos.x, 0, awpos.z);
+        defenderGroup.position.set(dwpos.x, 0, dwpos.z);
+      }
+
+      hudStep.textContent = `${currentStepIdx + 1} / ${currentSteps.length}`;
+      hudAtt.textContent = `[${ax}, ${ay}]`;
+      hudDef.textContent = `[${dx}, ${dy}]`;
+
+      if (ax < RIVER_X) {
+        hudBridge.textContent = "Left Basin";
+        hudBridge.style.color = "var(--text-dim)";
+      } else if (ax === RIVER_X) {
+        if (ay === 1) hudBridge.textContent = "North Bridge (Y=1)";
+        else if (ay === 3) hudBridge.textContent = "Center Bridge (Y=3)";
+        else if (ay === 5) hudBridge.textContent = "South Bridge (Y=5)";
+        else hudBridge.textContent = "River Obstacle";
+        hudBridge.style.color = "var(--accent-gold)";
+      } else {
+        hudBridge.textContent = "Flank Breakthrough!";
+        hudBridge.style.color = "var(--accent-green)";
+      }
+
+      const isLastStep = currentStepIdx === currentSteps.length - 1;
+      const reachedTarget = (ax === TARGET[0] && ay === TARGET[1]);
+      const caught = (ax === dx && ay === dy);
+
+      if (reachedTarget) {
+        outcomeBadge.className = "outcome-pill outcome-win";
+        outcomeBadge.textContent = "🎯 TARGET SECURED!";
+      } else if (caught) {
+        outcomeBadge.className = "outcome-pill outcome-caught";
+        outcomeBadge.textContent = "🛡️ INTERCEPTED!";
+      } else if (isLastStep) {
+        outcomeBadge.className = "outcome-pill outcome-timeout";
+        outcomeBadge.textContent = "⏱️ TIMEOUT";
+      } else {
+        outcomeBadge.className = "outcome-pill outcome-running";
+        outcomeBadge.textContent = currentStepIdx === 0 ? "SPAWN POSITIONS" : "MANEUVERING";
+      }
+    }
+
+    function generateFallbackReplay() {
+      const episodes = {};
+      for (let ep = 1; ep <= 100; ep++) {
+        const steps = [];
+        let ax = 0, ay = 3;
+        let dx = 7, dy = 3;
+        const targetBridgeY = ep % 2 === 0 ? 1 : 5;
+
+        for (let t = 0; t < 25; t++) {
+          if (ax < 4) ax++;
+          else if (ay !== targetBridgeY) ay += (targetBridgeY > ay ? 1 : -1);
+          else if (ax < 10) ax++;
+
+          if (t % 2 === 0 && dx > 6) dx--;
+          if (dy !== ay && t > 5) dy += (ay > dy ? 1 : -1);
+
+          steps.push({ attacker: [ax, ay], defender: [dx, dy] });
+          if (ax === 10 && ay === 3) break;
+          if (ax === dx && ay === dy) break;
+        }
+        episodes[ep.toString()] = steps;
+      }
+      return {
+        grid_size: [11, 7],
+        obstacles: [[5, 0], [5, 2], [5, 4], [5, 6]],
+        target: [10, 3],
+        episodes: episodes
+      };
+    }
+
+    // Event Handlers
+    modeSelect.addEventListener('change', (e) => {
+      loadReplay(e.target.value);
+    });
+
+    epInput.addEventListener('change', (e) => {
+      loadEpisode(e.target.value.trim(), /* snapImmediately = */ true);
+    });
+
+    epInput.addEventListener('keydown', (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        loadEpisode(e.target.value.trim(), /* snapImmediately = */ true);
+        epInput.blur();
+      }
+    });
+
+    btnEpPrev.addEventListener('click', () => {
+      const curIdx = currentEpisodes.indexOf(currentEpKey);
+      if (curIdx > 0) {
+        loadEpisode(currentEpisodes[curIdx - 1], /* snapImmediately = */ true);
+      }
+    });
+
+    btnEpNext.addEventListener('click', () => {
+      const curIdx = currentEpisodes.indexOf(currentEpKey);
+      if (curIdx < currentEpisodes.length - 1) {
+        loadEpisode(currentEpisodes[curIdx + 1], /* snapImmediately = */ true);
+      }
+    });
+
+    btnEpFinal.addEventListener('click', () => {
+      const maxEp = currentEpisodes[currentEpisodes.length - 1];
+      loadEpisode(maxEp, /* snapImmediately = */ true);
+    });
+
+    btnPlay.addEventListener('click', () => {
+      isPlaying = !isPlaying;
+      btnPlay.textContent = isPlaying ? "⏸ Pause" : "▶ Play";
+    });
+
+    btnPrev.addEventListener('click', () => {
+      isPlaying = false;
+      btnPlay.textContent = "▶ Play";
+      setStep(currentStepIdx - 1, /* snapImmediately = */ false);
+    });
+
+    btnNext.addEventListener('click', () => {
+      isPlaying = false;
+      btnPlay.textContent = "▶ Play";
+      setStep(currentStepIdx + 1, /* snapImmediately = */ false);
+    });
+
+    stepSlider.addEventListener('input', (e) => {
+      isPlaying = false;
+      btnPlay.textContent = "▶ Play";
+      setStep(parseInt(e.target.value), /* snapImmediately = */ true);
+    });
+
+    speedSelect.addEventListener('change', (e) => {
+      playbackSpeed = parseFloat(e.target.value);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        btnPlay.click();
+      } else if (e.code === "ArrowLeft") {
+        btnPrev.click();
+      } else if (e.code === "ArrowRight") {
+        btnNext.click();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function animate(time) {
+      requestAnimationFrame(animate);
+
+      const dt = (time - lastTickTime) / 1000;
+      lastTickTime = time;
+
+      if (isPlaying) {
+        tickAccumulator += dt * playbackSpeed;
+        const stepInterval = 0.25;
+        if (tickAccumulator >= stepInterval) {
+          tickAccumulator = 0;
+          if (currentStepIdx < currentSteps.length - 1) {
+            setStep(currentStepIdx + 1, /* snapImmediately = */ false);
+          } else {
+            isPlaying = false;
+            btnPlay.textContent = "▶ Play";
+          }
+        }
+      }
+
+      const lerpSpeed = isPlaying ? 0.22 : 0.4;
+      attackerGroup.position.x += (attTargetPos.x - attackerGroup.position.x) * lerpSpeed;
+      attackerGroup.position.z += (attTargetPos.z - attackerGroup.position.z) * lerpSpeed;
+
+      defenderGroup.position.x += (defTargetPos.x - defenderGroup.position.x) * lerpSpeed;
+      defenderGroup.position.z += (defTargetPos.z - defenderGroup.position.z) * lerpSpeed;
+
+      attackerGroup.position.y = Math.sin(time * 0.005) * 0.12;
+      defenderGroup.position.y = Math.cos(time * 0.005) * 0.08;
+      attRing.rotation.z += 0.02;
+      defRing.rotation.z -= 0.02;
+
+      gem.rotation.y += 0.02;
+      gem.position.y = 1.6 + Math.sin(time * 0.003) * 0.15;
+
+      river.position.y = -0.25 + Math.sin(time * 0.002) * 0.03;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // Initial Launch
+    loadReplay("doublearchive");
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

@@ -4,6 +4,7 @@ from replay_logger import ReplayLogger
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import torch
 
 def main():
     env = ArenaEnv()
@@ -19,7 +20,7 @@ def main():
     replay_logger = ReplayLogger("replays/red_queen.json")
     
     update_timestep = 2000
-    num_episodes = 4000
+    num_episodes = 2000
     time_step = 0
     
     att_win_rates = []
@@ -47,13 +48,19 @@ def main():
             # Log position for replay
             replay_logger.log_step(str(episode+1), env.attacker_pos, env.defender_pos)
             
-            # Distance-based shaping reward for Attacker
+            # Distance-based shaping reward for Attacker (Unbiased across all 3 bridges)
             old_x, old_y = state[0]*env.width, state[1]*env.height
             new_x, new_y = next_state[0]*env.width, next_state[1]*env.height
             tx, ty = state[4]*env.width, state[5]*env.height
             
-            old_dist = abs(old_x - tx) + abs(old_y - ty)
-            new_dist = abs(new_x - tx) + abs(new_y - ty)
+            def calc_dist(x, y):
+                if x <= 4:
+                    return min(abs(x - 4) + abs(y - by) for by in [1, 3, 5]) + 6
+                else:
+                    return abs(x - tx) + abs(y - ty)
+            
+            old_dist = calc_dist(old_x, old_y)
+            new_dist = calc_dist(new_x, new_y)
             att_dist_reward = (old_dist - new_dist) * 0.5
             
             # Store rewards
@@ -95,6 +102,9 @@ def main():
     plt.legend()
     
     os.makedirs("docs", exist_ok=True)
+    os.makedirs("models", exist_ok=True)
+    torch.save(attacker.policy.state_dict(), "models/phase4_attacker.pth")
+    
     replay_logger.save()
     plt.savefig("docs/phase4_marl_curve.png")
     print("\nTraining complete! Saved learning curve to docs/phase4_marl_curve.png")
