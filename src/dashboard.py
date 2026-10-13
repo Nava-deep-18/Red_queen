@@ -172,7 +172,11 @@ elif page == "📜 Game Theory":
 
 elif page == "🎯 Fixed Baseline":
     st.title("Fixed Opponent Baseline (PPO)")
-    st.markdown("In this setup, we paralyze the Defender and train the Attacker using PPO to navigate the 11x7 'Three Bridges' map. A distance-based scent trail allows it to quickly achieve a high win rate.")
+    st.markdown("""
+    In this setup, the Defender's policy is fixed (stationary baseline) to benchmark single-agent PPO navigation across the 11x7 'Three Bridges' map.
+    
+    Equipped with a distance gradient and a proximity **Danger Bubble** to steer around the Defender's position, the Attacker rapidly converges to an optimal, decisive pathfinding strategy.
+    """)
     display_image("docs/phase3_training_curve.png")
 
 elif page == "🔄 Red Queen":

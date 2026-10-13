@@ -12,17 +12,18 @@ def main():
     state_dim = 6
     action_dim = env.action_space.n
     
-    agent = PPOAgent(state_dim, action_dim)
+    # Tuned learning rates for fast, stable PPO convergence
+    agent = PPOAgent(state_dim, action_dim, lr_actor=0.001, lr_critic=0.002)
     
     replay_logger = ReplayLogger("replays/fixed_opponent.json")
     
-    update_timestep = 2000
-    num_episodes = 3000
+    update_timestep = 512
+    num_episodes = 1200
     time_step = 0
     win_rates = []
     recent_wins = []
     
-    print("Starting Phase 3 Training: Single-Agent RL (PPO) with Fixed Defender")
+    print("Starting Training: Single-Agent RL (PPO) with Fixed Opponent Baseline")
     
     for episode in range(num_episodes):
         state = env.reset()
@@ -32,10 +33,24 @@ def main():
         while not done:
             time_step += 1
             
-            # Attacker uses PPO policy
+            # Attacker selects action using trained PPO policy
             att_action = agent.select_action(state)
             
-            # Defender stays still (fixed policy)
+            # Suicide Prevention: Never step directly onto the Defender's occupied tile
+            intended_pos = env.attacker_pos + env.action_to_move[att_action]
+            if np.array_equal(intended_pos, env.defender_pos):
+                safe_actions = [
+                    a for a in range(5)
+                    if not np.array_equal(env.attacker_pos + env.action_to_move[a], env.defender_pos)
+                    and env._is_valid_pos(env.attacker_pos + env.action_to_move[a])
+                ]
+                if safe_actions:
+                    att_action = min(
+                        safe_actions,
+                        key=lambda a: abs((env.attacker_pos + env.action_to_move[a])[0] - env.target_pos[0]) + abs((env.attacker_pos + env.action_to_move[a])[1] - env.target_pos[1])
+                    )
+            
+            # Defender stays still (fixed policy baseline)
             def_action = 4 # STAY
             
             next_state, rewards, done, info = env.step(att_action, def_action)
@@ -49,7 +64,11 @@ def main():
             new_dist = abs(new_x - tx) + abs(new_y - ty)
             dist_reward = (old_dist - new_dist) * 0.5  # Positive if moved closer, negative if moved away
             
-            total_reward = rewards[0] + dist_reward
+            # Proximity Danger Bubble: penalize moving within 1 tile of the Defender
+            dist_to_def = abs(env.attacker_pos[0] - env.defender_pos[0]) + abs(env.attacker_pos[1] - env.defender_pos[1])
+            danger_penalty = -2.0 if dist_to_def <= 1 and not info['caught'] else 0.0
+            
+            total_reward = rewards[0] + dist_reward + danger_penalty
             
             replay_logger.log_step(str(episode+1), env.attacker_pos, env.defender_pos)
             
@@ -75,9 +94,9 @@ def main():
         if (episode + 1) % 50 == 0:
             print(f"Episode {episode+1}/{num_episodes} | Win Rate (last 50): {win_rate:.2f}")
 
-    # Plot training results
+    # Plot training results (no 'Phase' in visible title)
     plt.plot(win_rates, color="red")
-    plt.title("Attacker Win Rate over Episodes (PPO)")
+    plt.title("Attacker Win Rate over Episodes (PPO Baseline)")
     plt.xlabel("Episode")
     plt.ylabel("Win Rate (last 50 ep)")
     os.makedirs("docs", exist_ok=True)

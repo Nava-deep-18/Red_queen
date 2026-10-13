@@ -28,11 +28,16 @@ class ActorCritic(nn.Module):
     def forward(self):
         raise NotImplementedError
         
-    def act(self, state):
+    def act(self, state, evaluate=False):
         action_probs = self.actor(state)
-        dist = Categorical(action_probs)
-        action = dist.sample()
-        action_logprob = dist.log_prob(action)
+        if evaluate:
+            action = torch.argmax(action_probs, dim=-1)
+            dist = Categorical(action_probs)
+            action_logprob = dist.log_prob(action)
+        else:
+            dist = Categorical(action_probs)
+            action = dist.sample()
+            action_logprob = dist.log_prob(action)
         
         return action.detach(), action_logprob.detach()
     
@@ -73,13 +78,20 @@ class PPOAgent:
     def select_action(self, state, evaluate=False):
         with torch.no_grad():
             state = torch.FloatTensor(state)
-            action, action_logprob = self.policy_old.act(state)
+            action, action_logprob = self.policy_old.act(state, evaluate=evaluate)
         
         self.states.append(state)
         self.actions.append(action)
         self.logprobs.append(action_logprob)
         
         return action.item()
+
+    def predict(self, state):
+        """Pure greedy action selection for deterministic evaluation and clean replays."""
+        with torch.no_grad():
+            state = torch.FloatTensor(state)
+            action_probs = self.policy.actor(state)
+            return torch.argmax(action_probs, dim=-1).item()
 
     def store_reward(self, reward, done):
         self.rewards.append(reward)
