@@ -86,11 +86,14 @@ class PPOAgent:
         
         return action.item()
 
-    def predict(self, state):
+    def predict(self, state, action_mask=None):
         """Pure greedy action selection for deterministic evaluation and clean replays."""
         with torch.no_grad():
             state = torch.FloatTensor(state)
             action_probs = self.policy.actor(state)
+            if action_mask is not None:
+                mask = torch.tensor(action_mask, dtype=torch.bool)
+                action_probs = torch.where(mask, action_probs, torch.tensor(-1e9))
             return torch.argmax(action_probs, dim=-1).item()
 
     def store_reward(self, reward, done):
@@ -98,6 +101,10 @@ class PPOAgent:
         self.is_terminals.append(done)
 
     def update(self):
+        # Guard: nothing to learn from an empty buffer
+        if not self.rewards:
+            return
+
         # Monte Carlo estimate of returns
         rewards = []
         discounted_reward = 0
@@ -106,10 +113,14 @@ class PPOAgent:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
-            
-        # Normalizing the rewards
+
+        # Normalising the rewards
+        # Use population std (unbiased=False) so that a single-sample batch
+        # does not produce NaN (unbiased std of 1 sample is undefined).
         rewards = torch.tensor(rewards, dtype=torch.float32)
-        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
+        std = rewards.std(unbiased=False)
+        if std > 1e-7:
+            rewards = (rewards - rewards.mean()) / (std + 1e-7)
 
         old_states = torch.squeeze(torch.stack(self.states, dim=0)).detach()
         old_actions = torch.squeeze(torch.stack(self.actions, dim=0)).detach()
@@ -119,24 +130,25 @@ class PPOAgent:
         for _ in range(self.K_epochs):
             logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
             state_values = torch.squeeze(state_values)
-            
+
             ratios = torch.exp(logprobs - old_logprobs.detach())
             advantages = rewards - state_values.detach()
-            
+
             surr1 = ratios * advantages
             surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages
-            
+
             loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(state_values, rewards) - 0.01 * dist_entropy
-            
+
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
-            
+
         self.policy_old.load_state_dict(self.policy.state_dict())
-        
+
         # Clear buffer
         self.states.clear()
         self.actions.clear()
         self.logprobs.clear()
         self.rewards.clear()
         self.is_terminals.clear()
+

@@ -9,11 +9,13 @@ This document outlines the planned upgrades and extensions for the Red Queen AI 
 *   Upgrade the Streamlit dashboard (`src/dashboard.py`) to include a visual grid.
 *   Add a slider that allows the user to select an epoch and watch an animated playback of the game to visually confirm the strategies the agents learned.
 
-## 2. Double Opponent Archives (True Phase 6)
-**Concept:** Currently, only the Attacker practices against historical Defenders. For a complete theoretical model, both agents must use history to prevent catastrophic forgetting.
-**Action Items:**
-*   Update `src/train_phase6.py` so that the Defender *also* maintains an archive of past Attackers.
-*   Train both agents against a mix of current and archived opponents simultaneously.
+## 2. Double Opponent Archives (Phase 6 — Status: Implemented ✅, Refinements Pending)
+**Concept:** Both agents maintain and train against a rolling archive of historical opponents, preventing catastrophic forgetting and converging to a Nash Equilibrium corridor.
+**Current State:** `src/train_phase6.py` already maintains both `attacker_archive` and `defender_archive`. The sampling mix has been corrected to a true 60/20/20 split (60% current vs current, 20% each archive matchup).
+**Remaining Open Items:**
+*   Archives currently live only in RAM; they are lost when training ends. Save archive snapshots to `models/archive/` at each checkpoint so training can be resumed without starting from scratch.
+*   Define a held-out evaluation set — a small set of defender seeds not used during Phase 6 training — so the final attacker can be benchmarked on genuinely unseen opponents.
+*   Consider measuring exploitability (best-response win rate) rather than raw win rates, which are insufficient to establish a Nash Equilibrium claim.
 
 ## 3. The True Robustness Test (Cross-Evaluation)
 **Concept:** We need to mathematically prove Hypothesis 3 (that archive training creates better generalization than standard MARL).

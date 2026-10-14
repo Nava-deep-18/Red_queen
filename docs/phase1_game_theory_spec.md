@@ -105,8 +105,8 @@ The environment is strictly zero-sum: $\text{Payoff}(A) + \text{Payoff}(D) = 0$.
 | **Attacker Intercepted** | Attacker pos $==$ Defender pos | **$-10.0$** | **$+10.0$** |
 | **Timeout Draw** | $75$ steps elapsed | **$0.0$** | **$0.0$** |
 
-### Potential-Based Shaping Reward (Attacker):
-To guide early reinforcement learning without introducing strategic bias toward any specific bridge, the agent calculates a symmetric distance potential $D(x, y)$:
+### Symmetric Potential-Based Zero-Sum Reward Shaping:
+To guide reinforcement learning without introducing strategic bias toward any specific bridge while strictly preserving zero-sum Markov game dynamics (Ng et al. 1999; Devlin & Kudenko 2011), the agents calculate a symmetric distance potential $D(x, y)$:
 
 * **Before River ($X \le 4$):** Distance to the closest of the 3 bridges:
   $$D(x, y) = \min(|x - 4| + |y - b_y|) + 6 \quad \text{for } b_y \in \{1, 3, 5\}$$
@@ -114,7 +114,12 @@ To guide early reinforcement learning without introducing strategic bias toward 
 * **After River ($X > 4$):** Direct distance to Citadel target $(10, 3)$:
   $$D(x, y) = |x - 10| + |y - 3|$$
 
-* **Step Shaping Reward:**
-  $$R_{\text{shaping}} = (D_{\text{old}} - D_{\text{new}}) \times 0.5$$
+* **Zero-Sum Step Shaping:**
+  $$F(s, s') = (D_{\text{old}} - D_{\text{new}}) \times 0.5$$
+  $$R_A = R_{\text{env}, A} + F(s, s')$$
+  $$R_D = R_{\text{env}, D} - F(s, s')$$
 
-This potential function is symmetric and unbiased across North, Center, and South bridges, ensuring the agent learns bridge selection purely through game-theoretic interaction.
+$$\implies R_A + R_D = (R_{\text{env}, A} + F(s, s')) + (R_{\text{env}, D} - F(s, s')) = R_{\text{env}, A} + R_{\text{env}, D} = 0$$
+
+Because $R_A + R_D \equiv 0$ holds identically at every transition, the game remains strictly zero-sum, and potential-based shaping preserves all Nash equilibria and optimal policies without distorting relative payoffs.
+

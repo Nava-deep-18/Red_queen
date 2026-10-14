@@ -132,15 +132,21 @@ page = st.radio(
 )
 
 def get_all_replays_data():
-    def load_json(path):
+    """Load each replay JSON file, parse it, and re-serialize with json.dumps.
+    Re-serializing ensures special characters are properly escaped before the
+    data is embedded inside a <script> block (fix for issue #12)."""
+    def load_json_safe(path):
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
-                return f.read()
-        return "{}"
+                try:
+                    return json.dumps(json.load(f))  # parse then re-encode safely
+                except json.JSONDecodeError:
+                    return "null"
+        return "null"
     return (
-        load_json("replays/fixed_opponent.json"),
-        load_json("replays/red_queen.json"),
-        load_json("replays/red_queen_history.json")
+        load_json_safe("replays/fixed_opponent.json"),
+        load_json_safe("replays/red_queen.json"),
+        load_json_safe("replays/red_queen_history.json")
     )
 
 if page == "🎮 3D Tactical Arena":
@@ -181,28 +187,60 @@ elif page == "🎯 Fixed Baseline":
 
 elif page == "🔄 Red Queen":
     st.title("Full Multi-Agent RL: The Red Queen Effect")
-    st.markdown("Both agents train simultaneously using PPO. Forced through the 3 bridges, they enter a Rock-Paper-Scissors cycle. Notice the massive jagged sine-waves as they endlessly chase each other and suffer from **Catastrophic Forgetting**.")
+    st.markdown(r"""
+    Both agents train simultaneously using PPO. Forced to route through the 3 bridges, their policies change in response to each other over training.
+
+    **Hypothesis:** The oscillating win-rate curves are consistent with a *Red Queen dynamic* — a cycle where each agent adapts to exploit the other, only to be countered in turn. However, a smoothed win-rate curve alone cannot rule out simpler explanations such as stochastic policy noise or coincident learning-rate schedules.
+    
+    **Strictly Zero-Sum Formulation:** The environment and learning dynamics are strictly zero-sum ($R_{\text{Attacker}} + R_{\text{Defender}} \equiv 0$ at every transition). Distance shaping $F(s, s')$ is applied symmetrically: $+F$ to the Attacker and $-F$ to the Defender. Under potential-based reward shaping (Ng et al. 1999; Devlin & Kudenko 2011), this guarantees zero-sum payoff invariance and preserves Nash equilibrium structures.
+    
+    A confirmed Red Queen cycle would require tracking *which* bridge is chosen over time and showing that the Defender's strategy shifts in response — not just that win rates fluctuate.
+    """)
     display_image("docs/phase4_marl_curve.png")
 
 elif page == "🛡️ Double Archive":
-    st.title("Double History Archive (Nash Equilibrium)")
-    st.markdown("Agents are forced to fight historical ghosts from their Archive. This cures Catastrophic Forgetting and forces them into a generalized, robust mixed strategy, stabilizing both agents into a calm, persistent Nash Equilibrium corridor.")
+    st.title("Double History Archive (Stability Hypothesis)")
+    st.markdown("""
+    Both agents train against a rolling archive of past opponent policies (60% current vs current, 20% each archive matchup).
+
+    **Hypothesis:** Training against historical opponents should reduce the severity of catastrophic forgetting and push both policies toward a more *generalised* mixed strategy, ideally converging toward a Nash Equilibrium corridor.
+
+    **What the chart shows:**
+    - **Top panel:** Rolling attacker *and* defender win rates — plotted symmetrically so you can see both sides of the competition. A flatter, more stable curve compared to Phase 4 is consistent with reduced forgetting.
+    - **Bottom panel:** Timeout rate (fraction of episodes that end without either agent winning). High timeouts mean the attacker is failing to find a path, *not* that the defender is actively catching it — an important distinction.
+
+    Establishing a Nash Equilibrium claim would require measuring exploitability against a full population of strategies — a single training curve is not sufficient.
+
+    Methodology follows the spirit of opponent-archive approaches studied in the MARL literature (e.g., Policy-Space Response Oracles, Lanctot et al. 2017).
+    """)
     display_image("docs/phase6_archive_curve.png")
-    
+
 elif page == "📊 Robustness":
-    st.title("Robustness Comparison: The True Test")
-    st.markdown("We take the final Attackers from **Red Queen Self-Play** and **Double History Archive** and evaluate them against **4 Hardcoded Archetypes** (North Camper, Center Camper, South Camper, and River Patroller).")
+    st.title("Robustness Comparison")
+    st.markdown("""
+    The final Attackers from **Red Queen Self-Play (Phase 4)** and **Double History Archive (Phase 6)** are evaluated against **4 hand-coded, rule-based defender archetypes** (North Camper, Center Camper, South Camper, River Patroller).
+
+    Evaluation uses **deterministic greedy actions** and **paired random seeds** so both agents face identical starting positions. 95% confidence intervals are reported.
+    """)
     display_image("docs/robustness_chart.png")
-    st.info("💡 **Results:** The naive self-play attacker overfits to whatever bridge it used last in training, causing it to fail against other campers. The Double Archive attacker retains its memory of all 3 bridges and smoothly navigates around any archetype!")
+    st.warning("""
+    ⚠️ **Scope of this test:** These opponents are scripted, not learned. The results measure how well each agent handles *specific known behavioural patterns*, not generalisation to unseen adaptive defenders.
+    To support a Nash Equilibrium claim, evaluation against a diverse population of trained strategies and an exploitability measure would be required.
+    """)
 
 elif page == "🌍 Real-World":
     st.title("🌍 Domain-Agnostic Game Theory & Real-World Impact")
     st.markdown("""
-    The **Three Bridges Dilemma** is not just an abstract grid game. It is a mathematical model for any zero-sum competition 
+    The **Three Bridges Dilemma** is a computational model for zero-sum competition
     where an adaptive infiltrator must bypass an adaptive defender through bottleneck channels.
-    
-    In real-world competitive systems, naive adaptive learning causes **Catastrophic Forgetting**—overreacting to yesterday's threat while leaving 
-    past vectors completely exposed. **Double Opponent Archive** solves this by converging to an unexploitable **Nash Equilibrium**.
+
+    In real-world competitive systems, naive adaptive learning can cause **policy cycling** —
+    overreacting to recent threats while leaving previously exploited vectors re-exposed.
+    Opponent-archive methods are motivated by the hypothesis that training against a diverse history
+    of past policies produces more *generalised*, harder-to-exploit strategies.
+
+    The domain analogies below illustrate where these dynamics may apply. They are *conceptual mappings*,
+    not direct empirical claims from this project.
     """)
 
     st.markdown("---")
@@ -287,12 +325,18 @@ elif page == "🌍 Real-World":
 
     st.subheader("📊 Strategic Comparison Matrix")
     st.markdown("""
-    | Domain | Infiltrator Vector | Defensive Shield | Bottleneck Channels | The Nash Equilibrium Advantage |
+    | Domain | Infiltrator Vector | Defensive Shield | Bottleneck Channels | Potential Advantage (Hypothesis) |
     | :--- | :--- | :--- | :--- | :--- |
-    | **Cybersecurity** | Malware / APT | Adaptive AI Firewall | Ports 80, 443, 22 | Immune to rehashed historical exploits |
-    | **Oncology & Medicine** | Mutating Tumor | Combination Therapy | Receptors / Metabolic Pathways | Traps pathogen in an evolutionary dead-end |
-    | **Autonomous Driving** | Ego Vehicle Navigation | Adversarial Road Traffic | 3 Highway Lanes | Universally robust defensive driving |
-    | **Quantitative Finance**| Arbitrageur Bot | Automated Market Maker | Liquidity Pools / Order Books | Resilient against sudden market flash crashes |
+    | **Cybersecurity** | Malware / APT | Adaptive AI Firewall | Ports 80, 443, 22 | More robust to rehashed historical exploits |
+    | **Oncology & Medicine** | Mutating Tumor | Combination Therapy | Receptors / Metabolic Pathways | Combination therapy traps pathogen in evolutionary dead-ends |
+    | **Autonomous Driving** | Ego Vehicle Navigation | Adversarial Road Traffic | 3 Highway Lanes | Exposure to diverse driver archetypes may improve generalization |
+    | **Quantitative Finance**| Arbitrageur Bot | Automated Market Maker | Liquidity Pools / Order Books | Historical regime training may improve resilience to flash crashes |
     """)
 
-    st.success("🎯 **Key Takeaway:** Naive competitive learning produces an overreactive amateur who forgets yesterday's lessons. Double History Archive produces an **unexploitable grandmaster** with permanent general robustness.")
+    st.info("""
+    📌 **Research context:** Naive competitive self-play can produce cycling rather than convergence.
+    Opponent-archive methods (e.g., Policy-Space Response Oracles, Fictitious Play) are studied precisely
+    because they are motivated to push agents toward more general strategies.
+    Establishing a Nash Equilibrium claim requires exploitability measurement across a defined policy population —
+    single training curves are not sufficient evidence.
+    """)

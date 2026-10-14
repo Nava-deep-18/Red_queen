@@ -1,124 +1,189 @@
 import torch
 import os
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 from environment import ArenaEnv
 from agents.ppo import PPOAgent
 
-def evaluate_archetype(attacker_path, archetype, num_games=25):
+
+def evaluate_archetype(attacker_path: str, archetype: str, seeds: list[int]) -> tuple[float, float]:
+    """
+    Evaluate a trained attacker against a fixed hand-coded defender archetype.
+
+    Evaluation is deterministic: the attacker uses greedy action selection
+    (agent.predict) rather than stochastic sampling.  Episodes are run with
+    the provided seeds so that both Phase 4 and Phase 6 models face identical
+    starting positions for a fair, paired comparison.
+
+    Parameters
+    ----------
+    attacker_path : str
+        Path to the saved attacker model state dict.
+    archetype : str
+        Name of the fixed hand-coded defender policy to evaluate against.
+    seeds : list[int]
+        Random seeds; one episode is played per seed.
+
+    Returns
+    -------
+    win_rate : float   Average win rate across all seeds.
+    ci_95    : float   Half-width of the 95 % Wilson-score-ish CI (approx).
+
+    Note on validity: the four archetype policies below are fixed, deterministic,
+    hand-coded rule-based defenders.  They are not trained adaptive opponents and
+    they were not held out from training, so the results measure generalisation to
+    specific scripted behaviours rather than to unseen learned strategies.
+    To support a Nash-equilibrium claim, exploitability against a full population
+    of defenders would need to be measured; win-rate charts against four scripted
+    archetypes are insufficient for that claim.
+    """
     env = ArenaEnv()
     state_dim = 6
     action_dim = env.action_space.n
-    
+
     attacker = PPOAgent(state_dim, action_dim)
     if os.path.exists(attacker_path):
-        attacker.policy.load_state_dict(torch.load(attacker_path))
-        attacker.policy_old.load_state_dict(torch.load(attacker_path))
+        attacker.policy.load_state_dict(torch.load(attacker_path, weights_only=True))
+        attacker.policy_old.load_state_dict(torch.load(attacker_path, weights_only=True))
     else:
         print(f"Model not found: {attacker_path}")
-        return 0.0
-        
+        return 0.0, 0.0
+
     wins = 0
-    for _ in range(num_games):
-        state = env.reset()
+    for seed in seeds:
+        state, _ = env.reset(seed=seed)
         done = False
         while not done:
-            with torch.no_grad():
-                state_tensor = torch.FloatTensor(state)
-                att_action, _ = attacker.policy_old.act(state_tensor)
-                att_action = att_action.item()
-            
+            # Deterministic greedy action with obstacle collision masking
+            mask = [
+                env._is_valid_pos(env.attacker_pos + env.action_to_move[a])
+                for a in range(5)
+            ]
+            att_action = attacker.predict(state, action_mask=mask)
+
             dx, dy = env.defender_pos
             ax, ay = env.attacker_pos
-            
-            # Hardcoded archetypes on the river bank (X=6)
+
+            # --- Fixed rule-based archetype defenders ---
+            # These are scripted, hand-coded policies that move toward a fixed
+            # target row and then stay (campers) or patrol (patroller).
+            # They are NOT trained or adaptive opponents.
             if archetype == "NORTH_CAMPER":
-                if dy > 1: def_action = 0 # Up
-                elif dy < 1: def_action = 1 # Down
-                else: def_action = 4 # Stay
+                if   dy > 1: def_action = 0   # Move Up
+                elif dy < 1: def_action = 1   # Move Down
+                else:        def_action = 4   # Stay at Y=1
             elif archetype == "CENTER_CAMPER":
-                if dy > 3: def_action = 0 # Up
-                elif dy < 3: def_action = 1 # Down
-                else: def_action = 4 # Stay
+                if   dy > 3: def_action = 0
+                elif dy < 3: def_action = 1
+                else:        def_action = 4   # Stay at Y=3
             elif archetype == "SOUTH_CAMPER":
-                if dy > 5: def_action = 0 # Up
-                elif dy < 5: def_action = 1 # Down
-                else: def_action = 4 # Stay
+                if   dy > 5: def_action = 0
+                elif dy < 5: def_action = 1
+                else:        def_action = 4   # Stay at Y=5
             elif archetype == "PATROLLER":
                 # Patrols between North and South bridges along riverbank
-                if not hasattr(env, 'patrol_dir'): env.patrol_dir = 1
-                if dy <= 1: env.patrol_dir = 1
+                if   dy <= 1: env.patrol_dir = 1
                 elif dy >= 5: env.patrol_dir = -1
                 def_action = 1 if env.patrol_dir == 1 else 0
             else:
                 def_action = 4
-                
-            state, rewards, done, info = env.step(att_action, def_action)
-            if done and info.get('reached_target', False):
-                wins += 1
-    return wins / num_games
+
+            state, rewards, terminated, truncated, info = env.step(att_action, def_action)
+            done = terminated or truncated
+
+        if info.get("reached_target", False):
+            wins += 1
+
+    n = len(seeds)
+    win_rate = wins / n
+    # Approximate 95% confidence interval (normal approximation to binomial)
+    ci_95 = 1.96 * math.sqrt(win_rate * (1 - win_rate) / n) if n > 0 else 0.0
+    return win_rate, ci_95
+
 
 def main():
     archetypes = ["NORTH_CAMPER", "CENTER_CAMPER", "SOUTH_CAMPER", "PATROLLER"]
-    num_eval_games = 50
-    p4_scores = []
-    p6_scores = []
-    
-    print("Evaluating Phase 4...")
+    # Fix #9: both models share the same seeds → paired comparison
+    num_eval_games = 100
+    seeds = list(range(num_eval_games))
+
+    p4_scores, p4_cis = [], []
+    p6_scores, p6_cis = [], []
+
+    print("Evaluating Phase 4 (Red Queen Self-Play)...")
+    print("  (Greedy actions, paired seeds, 95% CI reported)")
     for arch in archetypes:
-        score = evaluate_archetype("models/phase4_attacker.pth", arch, num_games=num_eval_games)
+        score, ci = evaluate_archetype("models/phase4_attacker.pth", arch, seeds)
         p4_scores.append(score)
-        print(f"  P4 vs {arch}: {score*100:.1f}%")
-        
-    print("Evaluating Phase 6...")
+        p4_cis.append(ci)
+        print(f"  P4 vs {arch}: {score*100:.1f}% ± {ci*100:.1f}%")
+
+    print("Evaluating Phase 6 (Double History Archive)...")
     for arch in archetypes:
-        score = evaluate_archetype("models/phase6_attacker.pth", arch, num_games=num_eval_games)
+        score, ci = evaluate_archetype("models/phase6_attacker.pth", arch, seeds)
         p6_scores.append(score)
-        print(f"  P6 vs {arch}: {score*100:.1f}%")
-        
+        p6_cis.append(ci)
+        print(f"  P6 vs {arch}: {score*100:.1f}% ± {ci*100:.1f}%")
+
     p4_avg = sum(p4_scores) / len(p4_scores) if p4_scores else 0
     p6_avg = sum(p6_scores) / len(p6_scores) if p6_scores else 0
-    
+
     print(f"\nFinal Averages -> Phase 4: {p4_avg*100:.1f}% | Phase 6: {p6_avg*100:.1f}%")
-    
+    print("\nCaveat: opponents are fixed, hand-coded rule-based defenders.")
+    print("  Results measure robustness to scripted behaviours, not to unseen trained policies.")
+
     # Generate Research-Grade Grouped Bar Chart
-    plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6), gridspec_kw={'width_ratios': [2.5, 1]})
-    
+    plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6), gridspec_kw={"width_ratios": [2.5, 1]})
+
     x = np.arange(len(archetypes))
     width = 0.35
-    
-    rects1 = ax1.bar(x - width/2, [s*100 for s in p4_scores], width, label='Red Queen Self-Play', color='#e74c3c')
-    rects2 = ax1.bar(x + width/2, [s*100 for s in p6_scores], width, label='Double History Archive', color='#2ecc71')
-    
-    ax1.set_title('Robustness Test: Win Rates by Defender Archetype', fontsize=13, fontweight='bold')
-    ax1.set_ylabel('Win Rate (%)', fontsize=11)
+
+    rects1 = ax1.bar(x - width/2, [s*100 for s in p4_scores], width,
+                     label="Red Queen Self-Play", color="#e74c3c",
+                     yerr=[c*100 for c in p4_cis], capsize=4)
+    rects2 = ax1.bar(x + width/2, [s*100 for s in p6_scores], width,
+                     label="Double History Archive", color="#2ecc71",
+                     yerr=[c*100 for c in p6_cis], capsize=4)
+
+    ax1.set_title(f"Robustness Test: Win Rates vs Fixed Archetype Defenders\n(Greedy, paired seeds, 95% CI; n={num_eval_games} per archetype)",
+                  fontsize=11, fontweight="bold")
+    ax1.set_ylabel("Win Rate (%)", fontsize=11)
     ax1.set_xticks(x)
-    ax1.set_xticklabels(['North Camper\n(Y=1)', 'Center Camper\n(Y=3)', 'South Camper\n(Y=5)', 'River Patroller\n(Dynamic)'], fontsize=10)
-    ax1.set_ylim(0, 100)
-    ax1.legend(loc='upper right')
-    
+    ax1.set_xticklabels(
+        ["North Camper\n(Y=1)", "Center Camper\n(Y=3)", "South Camper\n(Y=5)", "River Patroller\n(Dynamic)"],
+        fontsize=10
+    )
+    ax1.set_ylim(0, 110)
+    ax1.legend(loc="upper right")
+
     for bar in rects1:
         h = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2, h + 1.5, f'{h:.0f}%', ha='center', va='bottom', fontsize=9, fontweight='bold', color='#c0392b')
+        ax1.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.0f}%",
+                 ha="center", va="bottom", fontsize=9, fontweight="bold", color="#c0392b")
     for bar in rects2:
         h = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2, h + 1.5, f'{h:.0f}%', ha='center', va='bottom', fontsize=9, fontweight='bold', color='#27ae60')
-        
+        ax1.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.0f}%",
+                 ha="center", va="bottom", fontsize=9, fontweight="bold", color="#27ae60")
+
     # Overall summary bar chart on the right
-    avg_bars = ax2.bar(['Red Queen', 'Double Archive'], [p4_avg*100, p6_avg*100], color=['#e74c3c', '#2ecc71'], width=0.55)
-    ax2.set_title('Overall Robustness', fontsize=13, fontweight='bold')
-    ax2.set_ylabel('Average Win Rate (%)', fontsize=11)
-    ax2.set_ylim(0, 100)
-    
+    avg_bars = ax2.bar(["Red Queen", "Double Archive"], [p4_avg*100, p6_avg*100],
+                       color=["#e74c3c", "#2ecc71"], width=0.55)
+    ax2.set_title("Overall Robustness\n(avg of 4 archetypes)", fontsize=11, fontweight="bold")
+    ax2.set_ylabel("Average Win Rate (%)", fontsize=11)
+    ax2.set_ylim(0, 110)
+
     for bar in avg_bars:
         h = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width()/2, h + 1.5, f'{h:.1f}%', ha='center', va='bottom', fontsize=12, fontweight='bold')
-        
+        ax2.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.1f}%",
+                 ha="center", va="bottom", fontsize=12, fontweight="bold")
+
     plt.tight_layout()
     os.makedirs("docs", exist_ok=True)
     plt.savefig("docs/robustness_chart.png", dpi=180)
     print("Saved comprehensive robustness chart to docs/robustness_chart.png")
+
 
 if __name__ == "__main__":
     main()
