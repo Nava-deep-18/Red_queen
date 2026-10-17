@@ -48,14 +48,15 @@ To study this phenomenon empirically without unnecessary state-space complexity,
 
 ### Phase 1: Environment & Mathematical Formulation
 - **File:** [`src/environment.py`](file:///c:/Red_queen/src/environment.py)
-- **Multi-Agent Grid-World (`ArenaEnv`):** Multi-agent parallel interface (following PettingZoo Parallel API semantics) on an $11 \times 7$ grid.
+- **Multi-Agent Grid-World (`ArenaEnv`):** Fully compliant Farama PettingZoo `ParallelEnv` on an $11 \times 7$ grid, verified with `pettingzoo.test.parallel_api_test`.
 - **State Representation:** 6-dimensional normalized vector $S = [\frac{a_x}{10}, \frac{a_y}{6}, \frac{d_x}{10}, \frac{d_y}{6}, \frac{t_x}{10}, \frac{t_y}{6}]$.
 - **Action Space:** Discrete 5-action space for each agent: `UP`, `DOWN`, `LEFT`, `RIGHT`, `STAY`.
-- **Termination Dynamics:** Attacker wins by securing the Citadel at $(10, 3)$; Defender wins by intercepting the Attacker before reaching Citadel; episode truncates at 100 steps.
+- **Termination Dynamics:** Attacker wins by securing the Citadel at $(10, 3)$; Defender wins by intercepting the Attacker before reaching Citadel; episode truncates at 75 steps.
 
 ### Phase 2: Agent Algorithms
 - **Files:** [`src/agents/ppo.py`](file:///c:/Red_queen/src/agents/ppo.py), [`src/agents/dqn.py`](file:///c:/Red_queen/src/agents/dqn.py)
-- **Proximal Policy Optimization (PPO):** Actor-Critic architecture with clipped objective ($\epsilon = 0.2$), Generalized Advantage Estimation (GAE), standard deviation stability guards (preventing NaN updates on edge cases), and greedy deterministic evaluation (`predict`).
+- **Proximal Policy Optimization (PPO):** Actor-Critic architecture with clipped objective ($\epsilon = 0.2$), discounted Monte Carlo advantage estimation ($A_t = G_t - V(s_t)$), standard deviation stability guards (preventing single-sample zero-division NaNs), and greedy deterministic evaluation (`predict`). PPO powers all core multi-agent co-adaptation and archive experiments.
+- **Deep Q-Network (DQN):** A modular DQN implementation provided in `src/agents/dqn.py` as an alternative single-agent baseline; all reported MARL phases specifically utilize the PPO pipeline.
 
 ### Phase 3: Baseline Single-Agent RL vs. Scripted Opponents
 - **File:** [`src/train_phase3.py`](file:///c:/Red_queen/src/train_phase3.py)

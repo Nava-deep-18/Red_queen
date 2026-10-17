@@ -91,23 +91,26 @@ st.markdown("""
     div[data-testid="stImage"] {
         display: flex !important;
         justify-content: center !important;
-        margin-top: 10px !important;
-        margin-bottom: 25px !important;
+        align-items: center !important;
+        margin-top: 4px !important;
+        margin-bottom: 12px !important;
     }
     div[data-testid="stImage"] > img {
-        max-width: 860px !important;
+        max-width: 780px !important;
+        max-height: 460px !important;
         width: auto !important;
         height: auto !important;
-        border-radius: 10px !important;
+        object-fit: contain !important;
+        border-radius: 8px !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 def display_image(image_path):
     if os.path.exists(image_path):
-        col_l, col_m, col_r = st.columns([1, 8, 1])
+        col_l, col_m, col_r = st.columns([1.5, 7, 1.5])
         with col_m:
             st.image(image_path, use_container_width=True)
     else:
@@ -169,7 +172,6 @@ if page == "🎮 3D Tactical Arena":
         st.warning("3D dashboard file not found.")
 
 elif page == "📜 Game Theory":
-    st.title("Game Theory & The Red Queen Hypothesis")
     if os.path.exists("docs/phase1_game_theory_spec.md"):
         with open("docs/phase1_game_theory_spec.md", "r", encoding="utf-8") as f:
             st.markdown(f.read())

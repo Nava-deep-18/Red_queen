@@ -214,7 +214,7 @@ For every episode, exactly one outcome should be recorded: attacker win, defende
 attacker_win + defender_win + timeout == 1
 ```
 
-The current environment gives target arrival priority over capture, and Phase 4/6 count mutually exclusive wins. That fixes the earlier double-win metric issue. One small edge remains: `info["timeout"]` is based on reaching the step limit even if a win happens on that same last step, while `truncated` is correctly false for a terminal win. For outcome accounting, derive timeout from `truncated` (or make the info flag mutually exclusive) and assert the invariant per episode. Phases 4 should also plot timeout/draw frequency if the win-rate denominator includes all episodes.
+The current environment gives target arrival priority over capture, and Phase 4/6 count mutually exclusive wins. `info["timeout"]` now agrees with `truncated`: it is true only when the step limit ends a nonterminal game. Add or retain a per-episode outcome invariant check (`attacker_win + defender_win + timeout == 1`) to catch future accounting regressions. Phase 4 should also plot timeout/draw frequency if its win-rate denominator includes all episodes.
 
 ### Phase 6 mixes training matchups
 
@@ -259,7 +259,7 @@ This table revisits the 12 review points supplied by the project owner and check
 | --- | --- | --- |
 | 1 | No equilibrium evidence yet | **Pending.** No policy cross-play payoff matrix or exploitability/best-response calculation exists. Current curves are not equilibrium evidence. |
 | 2 | Phase 6 oscillations may be noise | **Pending.** No multi-seed confidence bands or oscillation statistic. The 100-episode binomial standard-error calculation is only a rough intuition because training changes over time and rolling windows overlap. |
-| 3 | Attacker + Defender + timeout accounting | **Mostly fixed; edge remains.** Win flags are mutually exclusive, but `info["timeout"]` can also be true when a win lands exactly on the step limit. Use `truncated` for timeout accounting and assert one outcome per episode. |
+| 3 | Attacker + Defender + timeout accounting | **Timeout edge fixed.** Win flags are mutually exclusive, and `info["timeout"]` now agrees with `truncated`. A per-episode invariant assertion is still recommended. |
 | 4 | Phase 6 mixes opponents | **Pending.** Training curves conditionally count only episodes where that current agent is learning, and those include different matchup types. Add a separate fixed evaluation set for both current policies. |
 | 5 | Single training seed / fixed starts | **Partly resolved.** Attacker and Defender starts are randomized and seedable; target remains fixed by design. Training scripts do not establish a multi-seed study or seed all Python/NumPy/PyTorch randomness. Use multiple independent training seeds and held-out starts. |
 | 6 | Greedy Phase 7 evaluation | **Partly resolved by explicit scope.** Greedy evaluation is appropriate for a deterministic-policy benchmark, but not a substitute for evaluating the stochastic mixtures used in equilibrium analysis. Report both when relevant. |

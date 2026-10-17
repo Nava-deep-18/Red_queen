@@ -13,7 +13,7 @@ def main():
 
     # State dim is 6 (ax, ay, dx, dy, tx, ty)
     state_dim = 6
-    action_dim = env.action_space.n
+    action_dim = env.action_space("attacker").n
 
     # Tuned learning rates for fast, stable PPO convergence
     agent = PPOAgent(state_dim, action_dim, lr_actor=0.001, lr_critic=0.002)
@@ -30,7 +30,8 @@ def main():
     print("Starting Training: Single-Agent RL (PPO) with Fixed Opponent Baseline")
 
     for episode in range(num_episodes):
-        state, _ = env.reset()
+        obs, _ = env.reset()
+        state = obs["attacker"]
         done = False
 
         # Fix #11: log the initial spawn positions as the first replay frame
@@ -81,7 +82,7 @@ def main():
             done = terminated or truncated
 
             # Bridge-unbiased distance shaping reward
-            dist_reward = env.compute_zero_sum_shaping(old_att, env.attacker_pos, scale=0.5)
+            dist_reward, _ = env.compute_zero_sum_shaping(old_att, env.attacker_pos)
 
             # Proximity Danger Bubble: penalise moving within 1 tile of the Defender
             dist_to_def = (abs(env.attacker_pos[0] - env.defender_pos[0])
@@ -114,14 +115,17 @@ def main():
     # Fix #3: flush any remaining episodes at the end of training
     agent.update()
 
-    # Plot training results
-    plt.plot(win_rates, color="red")
-    plt.title("Attacker Win Rate over Episodes (PPO Baseline)")
-    plt.xlabel("Episode")
-    plt.ylabel("Win Rate (last 50 ep)")
+    # Plot training results (compact 8.5x4.4 @ 100 dpi)
+    plt.figure(figsize=(8.5, 4.4))
+    plt.plot(win_rates, color="red", linewidth=1.5)
+    plt.title("Attacker Win Rate over Episodes (PPO Baseline)", fontsize=11, fontweight="bold")
+    plt.xlabel("Episode", fontsize=10)
+    plt.ylabel("Win Rate (last 50 ep)", fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
     os.makedirs("docs", exist_ok=True)
     replay_logger.save()
-    plt.savefig("docs/phase3_training_curve.png")
+    plt.savefig("docs/phase3_training_curve.png", dpi=100)
     print("\nTraining complete! Saved learning curve to docs/phase3_training_curve.png")
 
 

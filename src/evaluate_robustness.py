@@ -40,7 +40,7 @@ def evaluate_archetype(attacker_path: str, archetype: str, seeds: list[int]) -> 
     """
     env = ArenaEnv()
     state_dim = 6
-    action_dim = env.action_space.n
+    action_dim = env.action_space("attacker").n
 
     attacker = PPOAgent(state_dim, action_dim)
     if os.path.exists(attacker_path):
@@ -52,7 +52,8 @@ def evaluate_archetype(attacker_path: str, archetype: str, seeds: list[int]) -> 
 
     wins = 0
     for seed in seeds:
-        state, _ = env.reset(seed=seed)
+        obs, _ = env.reset(seed=seed)
+        state = obs["attacker"]
         done = False
         while not done:
             # Deterministic greedy action with obstacle collision masking
@@ -133,56 +134,56 @@ def main():
     print("\nCaveat: opponents are fixed, hand-coded rule-based defenders.")
     print("  Results measure robustness to scripted behaviours, not to unseen trained policies.")
 
-    # Generate Research-Grade Grouped Bar Chart
+    # Generate Research-Grade Grouped Bar Chart (compact 9.5x4.2 @ 100 dpi)
     plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6), gridspec_kw={"width_ratios": [2.5, 1]})
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.5, 4.2), gridspec_kw={"width_ratios": [2.3, 1]})
 
     x = np.arange(len(archetypes))
     width = 0.35
 
     rects1 = ax1.bar(x - width/2, [s*100 for s in p4_scores], width,
                      label="Red Queen Self-Play", color="#e74c3c",
-                     yerr=[c*100 for c in p4_cis], capsize=4)
+                     yerr=[c*100 for c in p4_cis], capsize=3)
     rects2 = ax1.bar(x + width/2, [s*100 for s in p6_scores], width,
                      label="Double History Archive", color="#2ecc71",
-                     yerr=[c*100 for c in p6_cis], capsize=4)
+                     yerr=[c*100 for c in p6_cis], capsize=3)
 
-    ax1.set_title(f"Robustness Test: Win Rates vs Fixed Archetype Defenders\n(Greedy, paired seeds, 95% CI; n={num_eval_games} per archetype)",
-                  fontsize=11, fontweight="bold")
-    ax1.set_ylabel("Win Rate (%)", fontsize=11)
+    ax1.set_title(f"Robustness Test: Win Rates vs Fixed Archetype Defenders (n={num_eval_games})",
+                  fontsize=10, fontweight="bold")
+    ax1.set_ylabel("Win Rate (%)", fontsize=10)
     ax1.set_xticks(x)
     ax1.set_xticklabels(
         ["North Camper\n(Y=1)", "Center Camper\n(Y=3)", "South Camper\n(Y=5)", "River Patroller\n(Dynamic)"],
-        fontsize=10
+        fontsize=9
     )
-    ax1.set_ylim(0, 110)
-    ax1.legend(loc="upper right")
+    ax1.set_ylim(0, 115)
+    ax1.legend(loc="upper right", fontsize=8.5)
 
     for bar in rects1:
         h = bar.get_height()
         ax1.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.0f}%",
-                 ha="center", va="bottom", fontsize=9, fontweight="bold", color="#c0392b")
+                 ha="center", va="bottom", fontsize=8.5, fontweight="bold", color="#c0392b")
     for bar in rects2:
         h = bar.get_height()
         ax1.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.0f}%",
-                 ha="center", va="bottom", fontsize=9, fontweight="bold", color="#27ae60")
+                 ha="center", va="bottom", fontsize=8.5, fontweight="bold", color="#27ae60")
 
     # Overall summary bar chart on the right
     avg_bars = ax2.bar(["Red Queen", "Double Archive"], [p4_avg*100, p6_avg*100],
                        color=["#e74c3c", "#2ecc71"], width=0.55)
-    ax2.set_title("Overall Robustness\n(avg of 4 archetypes)", fontsize=11, fontweight="bold")
-    ax2.set_ylabel("Average Win Rate (%)", fontsize=11)
-    ax2.set_ylim(0, 110)
+    ax2.set_title("Overall Robustness\n(4 Archetypes)", fontsize=10, fontweight="bold")
+    ax2.set_ylabel("Average Win Rate (%)", fontsize=10)
+    ax2.set_ylim(0, 115)
 
     for bar in avg_bars:
         h = bar.get_height()
         ax2.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.1f}%",
-                 ha="center", va="bottom", fontsize=12, fontweight="bold")
+                 ha="center", va="bottom", fontsize=10, fontweight="bold")
 
     plt.tight_layout()
     os.makedirs("docs", exist_ok=True)
-    plt.savefig("docs/robustness_chart.png", dpi=180)
-    print("Saved comprehensive robustness chart to docs/robustness_chart.png")
+    plt.savefig("docs/robustness_chart.png", dpi=100)
+    print("Saved compact robustness chart to docs/robustness_chart.png")
 
 
 if __name__ == "__main__":

@@ -63,12 +63,12 @@ $$\text{North Bridge } (Y=1) \longleftrightarrow \text{Center Bridge } (Y=3) \lo
 
 The state is fully observable and represented as a normalized continuous vector of dimension $6$:
 
-$$S = \left[ \frac{a_x}{11}, \; \frac{a_y}{7}, \; \frac{d_x}{11}, \; \frac{d_y}{7}, \; \frac{t_x}{11}, \; \frac{t_y}{7} \right]$$
+$$S = \left[ \frac{a_x}{10}, \; \frac{a_y}{6}, \; \frac{d_x}{10}, \; \frac{d_y}{6}, \; \frac{t_x}{10}, \; \frac{t_y}{6} \right]$$
 
 * $a_x, a_y$: Attacker current coordinates.
 * $d_x, d_y$: Defender current coordinates.
 * $t_x, t_y$: Citadel target coordinates $(10, 3)$.
-* All features are normalized between $0.0$ and $1.0$ for neural network stability.
+* Coordinates are divided by $(W-1)=10$ and $(H-1)=6$ so all features map exactly into $[0.0, 1.0]$ for neural network stability.
 
 ---
 
