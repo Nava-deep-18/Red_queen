@@ -64,10 +64,10 @@ def main():
                             + abs((env.attacker_pos + env.action_to_move[a])[1] - env.target_pos[1])
                         )
                     )
-                    # Recompute log-prob for the replacement action
+                   # Recompute log-prob for the replacement action
                     with torch.no_grad():
-                        action_probs = agent.policy_old.actor(state_tensor)
-                        dist = Categorical(action_probs)
+                        action_logits = agent.policy_old.actor(state_tensor)
+                        dist = Categorical(logits=action_logits)
                         raw_logprob = dist.log_prob(torch.tensor(att_action))
 
             # Record the *final* action and its correct log-prob into the buffer
