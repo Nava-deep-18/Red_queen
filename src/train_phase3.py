@@ -3,6 +3,7 @@ from agents.ppo import PPOAgent
 from replay_logger import ReplayLogger
 import matplotlib.pyplot as plt
 import os
+import torch
 
 
 def main():
@@ -13,8 +14,6 @@ def main():
     action_dim = env.action_space("attacker").n
 
     agent = PPOAgent(state_dim, action_dim, lr_actor=0.001, lr_critic=0.002)
-
-    replay_logger = ReplayLogger.from_env("replays/fixed_opponent.json", env)
 
     # PPO updates after this many complete episodes (episode-boundary updates
     # keep Monte Carlo returns well-defined: no partial trajectories).
@@ -37,9 +36,6 @@ def main():
         state = obs["attacker"]
         done = False
 
-        # Log the initial spawn positions as the first replay frame
-        replay_logger.log_step(str(episode + 1), env.attacker_pos, env.defender_pos)
-
         while not done:
             # Only walls / river pillars are masked (a move into them does nothing).
             # Moving onto the Defender is allowed and ends the episode as a catch.
@@ -53,12 +49,10 @@ def main():
             done = terminated or truncated
 
             # Reward = terminal result (+10 reach target / -10 caught) + distance shaping
-            dist_reward, _ = env.compute_zero_sum_shaping(old_att, env.attacker_pos)
+            dist_reward, _ = env.compute_zero_sum_shaping(old_att, env.attacker_pos, gamma=0.99)
             total_reward = rewards[0] + dist_reward
 
-            replay_logger.log_step(str(episode + 1), env.attacker_pos, env.defender_pos)
             agent.store_reward(total_reward, done)
-
             state = next_state
 
         # Update only at episode boundaries so every batch holds complete trajectories.
@@ -87,10 +81,35 @@ def main():
     # Flush any remaining episodes at the end of training
     agent.update()
 
+    # Save trained baseline model
+    os.makedirs("models", exist_ok=True)
+    torch.save(agent.policy.state_dict(), "models/phase3_attacker.pth")
+    print("Saved trained model to models/phase3_attacker.pth")
+
+    # Record clean deterministic evaluation episodes for visual dashboard (50 games)
+    print("Recording clean deterministic evaluation replay games for Fixed Opponent...")
+    eval_logger = ReplayLogger.from_env("replays/fixed_opponent.json", env)
+    for eval_ep in range(50):
+        obs, _ = env.reset(seed=eval_ep * 17 + 1)
+        state = obs["attacker"]
+        eval_logger.log_step(str(eval_ep + 1), env.attacker_pos, env.defender_pos)
+        done = False
+        while not done:
+            att_mask = [env._is_valid_pos(env.attacker_pos + env.action_to_move[a]) for a in range(5)]
+            att_act = agent.predict(state, action_mask=att_mask)
+            next_state, _, term, trunc, _ = env.step(att_act, 4)
+            done = term or trunc
+            eval_logger.log_step(str(eval_ep + 1), env.attacker_pos, env.defender_pos)
+            state = next_state
+    eval_logger.save()
+    print("Saved clean deterministic replay games to replays/fixed_opponent.json")
+
+    # Plot results with exact metric closure and warmup window shading
     plt.figure(figsize=(8.5, 4.4))
     plt.plot(att_win_rates, color="red", linewidth=1.5, label="Attacker wins (reached target)")
     plt.plot(def_win_rates, color="blue", linewidth=1.5, label="Defender wins (caught attacker)")
     plt.plot(timeout_rates, color="darkorange", linewidth=1.2, label="Timeouts")
+    plt.axvspan(0, 50, color="gray", alpha=0.15, label="Warmup Window (N < 50)")
     plt.title("Phase 3: PPO Attacker vs Standing Defender", fontsize=11, fontweight="bold")
     plt.xlabel("Episode", fontsize=10)
     plt.ylabel("Rate (last 50 ep)", fontsize=10)
@@ -99,9 +118,8 @@ def main():
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     os.makedirs("docs", exist_ok=True)
-    replay_logger.save()
     plt.savefig("docs/phase3_training_curve.png", dpi=100)
-    print("\nTraining complete! Saved learning curve to docs/phase3_training_curve.png")
+    print("Saved learning curve to docs/phase3_training_curve.png")
 
 
 if __name__ == "__main__":

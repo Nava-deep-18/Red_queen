@@ -294,15 +294,15 @@ class ArenaEnv(ParallelEnv):
                 return pos
 
     def _sample_defender_spawn(self) -> np.ndarray:
-        """Defender spawns on the right side (X: 6–7); uses self.np_random when available."""
+        """Defender spawns across the Eastern basin (X: 6–9); uses self.np_random when available."""
         while True:
             if self.np_random is not None:
                 pos = np.array([
-                    int(self.np_random.integers(6, 8)),
+                    int(self.np_random.integers(6, 10)),
                     int(self.np_random.integers(0, self.height)),
                 ])
             else:
-                pos = np.array([random.randint(6, 7), random.randint(0, self.height - 1)])
+                pos = np.array([random.randint(6, 9), random.randint(0, self.height - 1)])
             if not np.array_equal(pos, self.target_pos) and self._is_valid_pos(pos):
                 return pos
 
@@ -331,6 +331,7 @@ class ArenaEnv(ParallelEnv):
         new_defender_pos: np.ndarray = None,
         scale_target: float = 0.3,
         scale_relative: float = 0.2,
+        gamma: float = 0.99,
     ) -> tuple[float, float]:
         """
         Calculates strictly zero-sum potential-based reward shaping:
@@ -339,6 +340,11 @@ class ArenaEnv(ParallelEnv):
         2. Relative distance potential: Defender gains +F_rel for closing distance to Attacker;
            Attacker receives -F_rel (opposing objective: evade interception).
 
+        Uses discounted potential shaping F(s,s') = Phi(s) - gamma*Phi(s') as per
+        Ng et al. (1999) to guarantee policy-invariance under PPO's gamma=0.99.
+        With gamma=0.99 (matching PPO's discount factor), this satisfies the exact
+        Ng et al. theorem, eliminating the prior gamma=1 approximation mismatch.
+
         Guarantees R_att + R_def == 0 identically at every timestep:
         - att_shaping = +F_target - F_rel
         - def_shaping = -F_target + F_rel
@@ -346,13 +352,15 @@ class ArenaEnv(ParallelEnv):
         """
         old_dist_tgt = self.calc_distance_potential(old_attacker_pos)
         new_dist_tgt = self.calc_distance_potential(new_attacker_pos)
-        f_target = (old_dist_tgt - new_dist_tgt) * scale_target
+        # Discounted shaping: F = Phi(s) - gamma*Phi(s') = D_old - gamma*D_new
+        f_target = (old_dist_tgt - gamma * new_dist_tgt) * scale_target
 
         f_rel = 0.0
         if old_defender_pos is not None and new_defender_pos is not None:
             old_rel = float(abs(old_attacker_pos[0] - old_defender_pos[0]) + abs(old_attacker_pos[1] - old_defender_pos[1]))
             new_rel = float(abs(new_attacker_pos[0] - new_defender_pos[0]) + abs(new_attacker_pos[1] - new_defender_pos[1]))
-            f_rel = (old_rel - new_rel) * scale_relative
+            # Discounted shaping: F_rel = D_rel_old - gamma*D_rel_new
+            f_rel = (old_rel - gamma * new_rel) * scale_relative
 
         att_shaping = f_target - f_rel
         def_shaping = -f_target + f_rel

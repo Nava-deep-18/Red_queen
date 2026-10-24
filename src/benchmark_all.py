@@ -110,6 +110,7 @@ def main():
         agent.policy_old.load_state_dict(torch.load(path, weights_only=True))
         return agent
 
+    p3_att = load_agent("models/phase3_attacker.pth")
     p4_att = load_agent("models/phase4_attacker.pth")
     p4_def = load_agent("models/phase4_defender.pth")
     p6_att = load_agent("models/phase6_attacker.pth")
@@ -121,6 +122,7 @@ def main():
 
     print("\n--- 1. Attacker Evaluation vs Standard Defender Baselines ---")
     attackers = [
+        ("Phase 3 Attacker (Fixed Baseline)", p3_att),
         ("Phase 4 Attacker", p4_att),
         ("Phase 6 Attacker", p6_att),
         ("Improved PPO Attacker", p_imp_att),

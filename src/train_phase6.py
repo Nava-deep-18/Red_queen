@@ -104,7 +104,7 @@ def main():
             # Strictly Zero-Sum Potential-Based Shaping with Relative Pursuit & Advance
             # R_att + R_def == 0 at every timestep. Both agents receive opposing shaping.
             att_shaping, def_shaping = env.compute_zero_sum_shaping(
-                old_att, env.attacker_pos, old_def, env.defender_pos
+                old_att, env.attacker_pos, old_def, env.defender_pos, gamma=0.99
             )
             att_reward = rewards[0] + att_shaping
             def_reward = rewards[1] + def_shaping
