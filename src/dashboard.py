@@ -237,7 +237,7 @@ st.markdown("""
         </div>
     </div>
     <div class="masthead-right">
-        <div class="masthead-affiliation">SVNIT Surat • Dept. of Mathematics & Computing</div>
+        <div class="masthead-affiliation">SVNIT Surat • Department of Mathematics</div>
         <div class="masthead-authors">Authors: <strong>Navadeep G.</strong>, <strong>Brij R.</strong>, <strong>Shrey M.</strong>, <strong>Shree P.</strong></div>
     </div>
 </div>

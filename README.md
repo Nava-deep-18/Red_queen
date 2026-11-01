@@ -8,7 +8,7 @@
 
 ## 👥 Authors & Project Team
 
-**Department of Mathematics and Computing (MnC)**  
+**Department of Mathematics**  
 **Sardar Vallabhbhai National Institute of Technology (SVNIT), Surat, Gujarat, India**
 
 * **Navadeep G.** — [nindra.navadeep11@gmail.com](mailto:nindra.navadeep11@gmail.com) | GitHub: [@Nava-deep-18](https://github.com/Nava-deep-18)
