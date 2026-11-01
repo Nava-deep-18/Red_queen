@@ -14,7 +14,7 @@
 * **Navadeep G.** — [nindra.navadeep11@gmail.com](mailto:nindra.navadeep11@gmail.com) | GitHub: [@Nava-deep-18](https://github.com/Nava-deep-18)
 * **Brij Radadiya** — [radadiyabrij43@gmail.com](mailto:radadiyabrij43@gmail.com) | GitHub: [@RadadiyaBrij](https://github.com/RadadiyaBrij)
 * **Shrey Marakana** — [marakanashrey2426@gmail.com](mailto:marakanashrey2426@gmail.com) | GitHub: [@SHREY-RK](https://github.com/SHREY-RK)
-* **Shree Pastagia** (Roll No: U24MC011) — [shreepastagia126219@gmail.com](mailto:shreepastagia126219@gmail.com) | SVNIT Surat
+* **Shree Pastagia** — [shreepastagia126219@gmail.com](mailto:shreepastagia126219@gmail.com) | GitHub: [@Shree-Pastagia](https://github.com/Shree-Pastagia)
 
 ---
 
