@@ -82,12 +82,14 @@
     }
 
     .brand-title {
-      font-size: 1rem;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      background: linear-gradient(135deg, #ff3366, #ff9933, #00d2ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #f8fafc;
+    }
+
+    .brand-title span {
+      color: #38bdf8;
     }
 
     .selectors-group {
@@ -391,7 +393,7 @@
     <!-- Header Command Bar -->
     <div class="top-command-bar">
       <div class="brand-section">
-        <div class="brand-title">⚔️ RED QUEEN 3D ARENA</div>
+        <div class="brand-title">👑 RED QUEEN <span>3D ARENA</span></div>
       </div>
 
       <div class="selectors-group">
@@ -399,8 +401,8 @@
         <div class="select-item">
           <span>Mode:</span>
           <select id="mode-select">
-            <option value="doublearchive" selected>🛡️ Double Archive (Nash Equilibrium)</option>
-            <option value="redqueen">🔄 Red Queen Multi-Agent (Self-Play)</option>
+            <option value="doublearchive" selected>🛡️ Dual-Archive Co-Evolution</option>
+            <option value="redqueen">🔄 Naive Self-Play (Red Queen)</option>
             <option value="fixed">🎯 Fixed Baseline</option>
           </select>
         </div>
@@ -415,7 +417,7 @@
           <button class="ep-nav-btn" id="btn-ep-final" style="background: rgba(0, 210, 255, 0.15); border-color: rgba(0, 210, 255, 0.4);" title="Jump to final trained policy">🚀 Final Ep</button>
         </div>
 
-        <div id="active-badge" class="badge badge-p6">NASH EQUILIBRIUM ACTIVE</div>
+        <div id="active-badge" class="badge badge-p6">DUAL-ARCHIVE (δ = 0.140)</div>
       </div>
     </div>
 
@@ -483,9 +485,9 @@
     };
 
     const MODE_INFO = {
-      fixed: { text: "FIXED BASELINE ACTIVE", cls: "badge badge-p3" },
-      redqueen: { text: "RED QUEEN SELF-PLAY (CYCLIC)", cls: "badge badge-p4" },
-      doublearchive: { text: "NASH EQUILIBRIUM ACTIVE", cls: "badge badge-p6" }
+      fixed: { text: "STATIONARY BASELINE", cls: "badge badge-p3" },
+      redqueen: { text: "NAIVE SELF-PLAY (CYCLIC)", cls: "badge badge-p4" },
+      doublearchive: { text: "DUAL-ARCHIVE (δ = 0.140)", cls: "badge badge-p6" }
     };
 
     // State Variables

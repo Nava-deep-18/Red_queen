@@ -3,4 +3,8 @@ __pycache__/
 *.pyc
 replays/
 models/
-
+.agents/
+.claude/
+BEGINNER_EXPLANATION_GUIDE.md
+BEGINNER_EXPLANATION_GUIDE.html
+beginner_explanation_guide.html
