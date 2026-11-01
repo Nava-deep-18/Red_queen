@@ -4,6 +4,7 @@ from gymnasium.utils import seeding
 from pettingzoo import ParallelEnv
 import copy
 import random
+from typing import Optional
 
 
 class ArenaEnv(ParallelEnv):
@@ -45,15 +46,16 @@ class ArenaEnv(ParallelEnv):
     """
 
     metadata = {
-        "render_modes": ["ansi"],
+        "render_modes": ["ansi", "human"],
         "name": "three_bridges_arena_v0",
     }
 
-    def __init__(self, width: int = 11, height: int = 7, max_steps: int = 75):
+    def __init__(self, width: int = 11, height: int = 7, max_steps: int = 75, render_mode: Optional[str] = None):
         super().__init__()
         self.width = width
         self.height = height
         self.max_steps = max_steps
+        self.render_mode = render_mode
 
         # Multi-agent identity list
         self.possible_agents = ["attacker", "defender"]
@@ -256,10 +258,14 @@ class ArenaEnv(ParallelEnv):
         else:
             grid[self.defender_pos[1]][self.defender_pos[0]] = "🛡️"
             grid[self.attacker_pos[1]][self.attacker_pos[0]] = "😈"
-        print("\nArena State:")
+        lines = ["\nArena State:"]
         for row in grid:
-            print(" ".join(row))
-        print("-------------")
+            lines.append(" ".join(row))
+        lines.append("-------------")
+        rendered_str = "\n".join(lines)
+        if self.render_mode == "human":
+            print(rendered_str)
+        return rendered_str
 
     def _get_state(self) -> np.ndarray:
         """
