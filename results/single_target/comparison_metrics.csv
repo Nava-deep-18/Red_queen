@@ -1,0 +1,9 @@
+target_system,attacker_model,defender_type,episodes,att_win_rate,att_ci_95,def_win_rate,def_ci_95,timeout_rate,avg_steps,sem_steps
+original_single_target,models/phase4_attacker.pth,learned_defender,500,0.182,0.0338,0.818,0.0338,0.0,6.48,0.132
+original_single_target,models/phase4_attacker.pth,stay,500,0.71,0.0397,0.142,0.0306,0.148,19.37,1.04
+original_single_target,models/phase4_attacker.pth,random,500,0.876,0.0289,0.124,0.0289,0.0,11.47,0.297
+original_single_target,models/phase4_attacker.pth,pursuit,500,0.366,0.0421,0.634,0.0421,0.0,6.69,0.147
+original_single_target,models/phase4_attacker.pth,north_camper,500,0.662,0.0413,0.282,0.0393,0.056,12.61,0.686
+original_single_target,models/phase4_attacker.pth,center_camper,500,0.58,0.0431,0.42,0.0431,0.0,9.4,0.108
+original_single_target,models/phase4_attacker.pth,south_camper,500,0.48,0.0436,0.218,0.0361,0.302,28.76,1.363
+original_single_target,models/phase4_attacker.pth,patroller,500,0.84,0.0321,0.16,0.0321,0.0,9.94,0.096

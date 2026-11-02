@@ -1,0 +1,283 @@
+{
+  "K_2": {
+    "learned_defender": {
+      "num_episodes": 500,
+      "k_targets": 2,
+      "target_coords": [
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      "attacker_win_rate": 0.226,
+      "attacker_ci_95": 0.03657995763701433,
+      "defender_win_rate": 0.108,
+      "defender_ci_95": 0.02726643500514766,
+      "timeout_rate": 0.666,
+      "avg_episode_steps": 52.252,
+      "std_episode_steps": 32.15656225407187,
+      "sem_episode_steps": 1.4380851824561713,
+      "target_breach_distribution": {
+        "0": 57,
+        "1": 56
+      },
+      "bridge_crossing_distribution": {
+        "north": 60,
+        "center": 65,
+        "south": 78
+      }
+    },
+    "stay": {
+      "num_episodes": 500,
+      "k_targets": 2,
+      "target_coords": [
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      "attacker_win_rate": 0.256,
+      "attacker_ci_95": 0.03815332826613811,
+      "defender_win_rate": 0.06,
+      "defender_ci_95": 0.021006746152647277,
+      "timeout_rate": 0.684,
+      "avg_episode_steps": 53.824,
+      "std_episode_steps": 31.166087723678118,
+      "sem_episode_steps": 1.393789814857319,
+      "target_breach_distribution": {
+        "0": 57,
+        "1": 71
+      },
+      "bridge_crossing_distribution": {
+        "north": 65,
+        "center": 70,
+        "south": 83
+      }
+    },
+    "random": {
+      "num_episodes": 500,
+      "k_targets": 2,
+      "target_coords": [
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      "attacker_win_rate": 0.25,
+      "attacker_ci_95": 0.037858280468455546,
+      "defender_win_rate": 0.202,
+      "defender_ci_95": 0.03513147608874699,
+      "timeout_rate": 0.548,
+      "avg_episode_steps": 49.492,
+      "std_episode_steps": 31.119028519540898,
+      "sem_episode_steps": 1.3916852632689618,
+      "target_breach_distribution": {
+        "0": 55,
+        "1": 70
+      },
+      "bridge_crossing_distribution": {
+        "north": 64,
+        "center": 70,
+        "south": 83
+      }
+    },
+    "pursuit": {
+      "num_episodes": 500,
+      "k_targets": 2,
+      "target_coords": [
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      "attacker_win_rate": 0.1,
+      "attacker_ci_95": 0.02637266078764124,
+      "defender_win_rate": 0.426,
+      "defender_ci_95": 0.043182410398885894,
+      "timeout_rate": 0.474,
+      "avg_episode_steps": 38.556,
+      "std_episode_steps": 34.664836131157465,
+      "sem_episode_steps": 1.550258600363178,
+      "target_breach_distribution": {
+        "0": 22,
+        "1": 28
+      },
+      "bridge_crossing_distribution": {
+        "north": 55,
+        "center": 58,
+        "south": 76
+      }
+    },
+    "north_camper": {
+      "num_episodes": 500,
+      "k_targets": 2,
+      "target_coords": [
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      "attacker_win_rate": 0.17,
+      "attacker_ci_95": 0.032896269625499276,
+      "defender_win_rate": 0.126,
+      "defender_ci_95": 0.029116750427630025,
+      "timeout_rate": 0.704,
+      "avg_episode_steps": 54.974,
+      "std_episode_steps": 30.898888717881107,
+      "sem_episode_steps": 1.3818403120476694,
+      "target_breach_distribution": {
+        "0": 2,
+        "1": 83
+      },
+      "bridge_crossing_distribution": {
+        "north": 65,
+        "center": 70,
+        "south": 83
+      }
+    },
+    "center_camper": {
+      "num_episodes": 500,
+      "k_targets": 2,
+      "target_coords": [
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      "attacker_win_rate": 0.296,
+      "attacker_ci_95": 0.039890698741721096,
+      "defender_win_rate": 0.14,
+      "defender_ci_95": 0.03042266165548474,
+      "timeout_rate": 0.564,
+      "avg_episode_steps": 45.684,
+      "std_episode_steps": 33.35949855738242,
+      "sem_episode_steps": 1.4918821293922653,
+      "target_breach_distribution": {
+        "0": 65,
+        "1": 83
+      },
+      "bridge_crossing_distribution": {
+        "north": 65,
+        "center": 70,
+        "south": 83
+      }
+    },
+    "south_camper": {
+      "num_episodes": 500,
+      "k_targets": 2,
+      "target_coords": [
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      "attacker_win_rate": 0.138,
+      "attacker_ci_95": 0.030242558418689648,
+      "defender_win_rate": 0.16,
+      "defender_ci_95": 0.03211649287092791,
+      "timeout_rate": 0.702,
+      "avg_episode_steps": 54.762,
+      "std_episode_steps": 31.077602159754864,
+      "sem_episode_steps": 1.389832620138123,
+      "target_breach_distribution": {
+        "0": 65,
+        "1": 4
+      },
+      "bridge_crossing_distribution": {
+        "north": 65,
+        "center": 70,
+        "south": 83
+      }
+    },
+    "patroller": {
+      "num_episodes": 500,
+      "k_targets": 2,
+      "target_coords": [
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      "attacker_win_rate": 0.252,
+      "attacker_ci_95": 0.0379576819341818,
+      "defender_win_rate": 0.084,
+      "defender_ci_95": 0.024428041786651516,
+      "timeout_rate": 0.664,
+      "avg_episode_steps": 52.418,
+      "std_episode_steps": 31.758389064938417,
+      "sem_episode_steps": 1.4202783361017657,
+      "target_breach_distribution": {
+        "0": 57,
+        "1": 69
+      },
+      "bridge_crossing_distribution": {
+        "north": 65,
+        "center": 70,
+        "south": 83
+      }
+    },
+    "transfer_phase4_vs_pursuit": {
+      "num_episodes": 500,
+      "k_targets": 2,
+      "target_coords": [
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          5
+        ]
+      ],
+      "attacker_win_rate": 0.244,
+      "attacker_ci_95": 0.037553662343967516,
+      "defender_win_rate": 0.756,
+      "defender_ci_95": 0.037553662343967516,
+      "timeout_rate": 0.0,
+      "avg_episode_steps": 6.948,
+      "std_episode_steps": 3.6311562896686227,
+      "sem_episode_steps": 0.16239024601249916,
+      "target_breach_distribution": {
+        "0": 75,
+        "1": 47
+      },
+      "bridge_crossing_distribution": {
+        "north": 145,
+        "center": 176,
+        "south": 105
+      }
+    }
+  }
+}
