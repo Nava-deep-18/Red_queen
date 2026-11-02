@@ -1,6 +1,13 @@
+import os
+import sys
 import unittest
 import numpy as np
 import gymnasium as gym
+
+# Allow both "python tests/test_multi_target_environment.py" (direct)
+# and "python -m unittest tests.test_multi_target_environment" (via pytest/discover)
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from src.environment import ArenaEnv
 from src.multi_target_environment import MultiTargetArenaEnv, PRESET_TARGETS, STATE_DIM, MAX_TARGETS
 

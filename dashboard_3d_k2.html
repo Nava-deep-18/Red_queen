@@ -502,6 +502,13 @@
     let lastTickTime = performance.now();
     let tickAccumulator = 0;
 
+    // Animation enhancement state
+    let outcomeFlashTimer = 0;   // countdown 1.0->0 on outcome
+    let outcomeFlashType = null; // "win" | "caught" | null
+    let stepSnapQueued = false;  // snap instantly on this frame
+    let attFacingAngle = 0;      // smoothed Y-rotation for attacker facing
+    let defFacingAngle = 0;      // smoothed Y-rotation for defender facing
+
     // Three.js Core Setup
     const container = document.getElementById('webgl-canvas');
     const scene = new THREE.Scene();
@@ -746,6 +753,15 @@
     defenderGroup.add(defRing);
     scene.add(defenderGroup);
 
+    // Dynamic agent point lights (move with agents each frame)
+    const attLight = new THREE.PointLight(0xff3366, 1.8, 7);
+    attLight.position.set(0, 2, 0);
+    scene.add(attLight);
+
+    const defLight = new THREE.PointLight(0x00d2ff, 1.6, 7);
+    defLight.position.set(20, 2, 6);
+    scene.add(defLight);
+
     // -------------------------------------------------------------
     // Targeted Board Rotation: Only rotate when dragging directly ON the board!
     // -------------------------------------------------------------
@@ -853,8 +869,8 @@
       epInput.max = maxEp;
       epMaxLabel.textContent = `/ ${maxEp}`;
 
-      // Default to final trained episode
-      loadEpisode(maxEp, /* snapImmediately = */ true);
+      // Default to Episode 1 for immediate decisive showcase
+      loadEpisode(minEp, /* snapImmediately = */ true);
     }
 
     function loadEpisode(epKey, snapImmediately = true) {
@@ -914,6 +930,9 @@
       if (snapImmediately) {
         attackerGroup.position.set(awpos.x, 0, awpos.z);
         defenderGroup.position.set(dwpos.x, 0, dwpos.z);
+        stepSnapQueued = false;
+      } else {
+        stepSnapQueued = true;
       }
 
       hudStep.textContent = `${currentStepIdx + 1} / ${currentSteps.length}`;
@@ -950,6 +969,16 @@
       } else {
         outcomeBadge.className = "outcome-pill outcome-running";
         outcomeBadge.textContent = currentStepIdx === 0 ? "SPAWN POSITIONS" : "MANEUVERING";
+        outcomeFlashType = null;
+      }
+
+      // Trigger outcome flash effect when final step is an outcome
+      if (reachedTarget) {
+        outcomeFlashTimer = 1.0;
+        outcomeFlashType = "win";
+      } else if (caught) {
+        outcomeFlashTimer = 1.0;
+        outcomeFlashType = "caught";
       }
     }
 
@@ -970,8 +999,11 @@
           else if (ax < 10) ax++;
           else if (ay !== targetGoalY) ay += (targetGoalY > ay ? 1 : -1);
 
-          if (t % 2 === 0 && dx > 6) dx--;
-          if (dy !== ay && t > 5) dy += (ay > dy ? 1 : -1);
+          // In Fixed Baseline mode, defender is completely stationary (STAY)
+          if (currentMode !== "fixed") {
+            if (t % 2 === 0 && dx > 6) dx--;
+            if (dy !== ay && t > 5) dy += (ay > dy ? 1 : -1);
+          }
 
           steps.push({ attacker: [ax, ay], defender: [dx, dy] });
           if (TARGETS.some(function(tt) { return ax === tt[0] && ay === tt[1]; })) break;
@@ -1071,12 +1103,15 @@
     function animate(time) {
       requestAnimationFrame(animate);
 
-      const dt = (time - lastTickTime) / 1000;
+      const dt = Math.min((time - lastTickTime) / 1000, 0.1);
       lastTickTime = time;
 
+      // -------------------------------------------------------
+      // Playback tick
+      // -------------------------------------------------------
       if (isPlaying) {
         tickAccumulator += dt * playbackSpeed;
-        const stepInterval = 0.25;
+        const stepInterval = 0.28;
         if (tickAccumulator >= stepInterval) {
           tickAccumulator = 0;
           if (currentStepIdx < currentSteps.length - 1) {
@@ -1088,24 +1123,107 @@
         }
       }
 
-      const lerpSpeed = isPlaying ? 0.22 : 0.4;
-      attackerGroup.position.x += (attTargetPos.x - attackerGroup.position.x) * lerpSpeed;
-      attackerGroup.position.z += (attTargetPos.z - attackerGroup.position.z) * lerpSpeed;
+      // -------------------------------------------------------
+      // Agent movement interpolation
+      // Snap fast on manual step; smooth lerp during auto-play
+      // -------------------------------------------------------
+      const lerpSpeed = (stepSnapQueued || !isPlaying) ? 0.55 : 0.25;
+      stepSnapQueued = false;
 
-      defenderGroup.position.x += (defTargetPos.x - defenderGroup.position.x) * lerpSpeed;
-      defenderGroup.position.z += (defTargetPos.z - defenderGroup.position.z) * lerpSpeed;
+      const attDx = attTargetPos.x - attackerGroup.position.x;
+      const attDz = attTargetPos.z - attackerGroup.position.z;
+      attackerGroup.position.x += attDx * lerpSpeed;
+      attackerGroup.position.z += attDz * lerpSpeed;
 
-      attackerGroup.position.y = Math.sin(time * 0.005) * 0.12;
-      defenderGroup.position.y = Math.cos(time * 0.005) * 0.08;
-      attRing.rotation.z += 0.02;
-      defRing.rotation.z -= 0.02;
+      const defDx = defTargetPos.x - defenderGroup.position.x;
+      const defDz = defTargetPos.z - defenderGroup.position.z;
+      defenderGroup.position.x += defDx * lerpSpeed;
+      defenderGroup.position.z += defDz * lerpSpeed;
 
+      // Facing direction: rotate agents toward direction of travel
+      const attMoveDist = Math.sqrt(attDx * attDx + attDz * attDz);
+      if (attMoveDist > 0.06) {
+        const targetAngle = Math.atan2(attDx, attDz);
+        let da = targetAngle - attFacingAngle;
+        while (da > Math.PI) da -= 2 * Math.PI;
+        while (da < -Math.PI) da += 2 * Math.PI;
+        attFacingAngle += da * 0.18;
+        attackerGroup.rotation.y = attFacingAngle;
+      }
+      const defMoveDist = Math.sqrt(defDx * defDx + defDz * defDz);
+      if (defMoveDist > 0.06) {
+        const targetAngle = Math.atan2(defDx, defDz);
+        let da = targetAngle - defFacingAngle;
+        while (da > Math.PI) da -= 2 * Math.PI;
+        while (da < -Math.PI) da += 2 * Math.PI;
+        defFacingAngle += da * 0.18;
+        defenderGroup.rotation.y = defFacingAngle;
+      }
+
+      // -------------------------------------------------------
+      // Bob / hover: stronger & frequency-differentiated
+      // -------------------------------------------------------
+      attackerGroup.position.y = Math.sin(time * 0.0065) * 0.22 + 0.1;
+      defenderGroup.position.y = Math.cos(time * 0.004) * 0.14 + 0.06;
+
+      // -------------------------------------------------------
+      // Outcome flash: scale-pulse on win/caught
+      // -------------------------------------------------------
+      if (outcomeFlashTimer > 0) {
+        outcomeFlashTimer = Math.max(0, outcomeFlashTimer - dt * 2.2);
+        const pulse = 1.0 + Math.sin(outcomeFlashTimer * Math.PI * 6) * 0.35 * outcomeFlashTimer;
+        if (outcomeFlashType === "win") {
+          attackerGroup.scale.setScalar(pulse);
+          gems.forEach(function(g) { g.scale.setScalar(1.0 + outcomeFlashTimer * 0.8); });
+        } else if (outcomeFlashType === "caught") {
+          attackerGroup.scale.setScalar(Math.max(0.3, 1.0 - outcomeFlashTimer * 0.6));
+          defenderGroup.scale.setScalar(pulse);
+        }
+      } else {
+        attackerGroup.scale.setScalar(1.0);
+        defenderGroup.scale.setScalar(1.0);
+        if (outcomeFlashType !== null) {
+          gems.forEach(function(g) { g.scale.setScalar(1.0); });
+          outcomeFlashType = null;
+        }
+      }
+
+      // -------------------------------------------------------
+      // Move agent point lights with their respective agents
+      attLight.position.set(attackerGroup.position.x, 2.5, attackerGroup.position.z);
+      defLight.position.set(defenderGroup.position.x, 2.5, defenderGroup.position.z);
+
+      // Pulse agent light intensity based on outcome flash
+      if (outcomeFlashType === "win" && outcomeFlashTimer > 0) {
+        attLight.intensity = 1.8 + Math.sin(outcomeFlashTimer * Math.PI * 8) * 2.5;
+        gems.forEach(function(g, i) { g.material.emissiveIntensity = 0.7 + outcomeFlashTimer * 2.0; });
+      } else if (outcomeFlashType === "caught" && outcomeFlashTimer > 0) {
+        defLight.intensity = 1.6 + Math.sin(outcomeFlashTimer * Math.PI * 8) * 3.0;
+        attLight.intensity = 0.2;
+      } else {
+        attLight.intensity = 1.8;
+        defLight.intensity = 1.6;
+      }
+
+      // Ring rotation: faster, axis-varied
+      // -------------------------------------------------------
+      attRing.rotation.z += 0.035;
+      defRing.rotation.z -= 0.028;
+      attRing.rotation.y += 0.015;
+
+      // -------------------------------------------------------
+      // Gem animation: bigger float, faster spin
+      // -------------------------------------------------------
       gems.forEach(function(g, i) {
-        g.rotation.y += 0.02;
-        g.position.y = 1.6 + Math.sin(time * 0.003 + i * Math.PI) * 0.15;
+        g.rotation.y += 0.038;
+        g.rotation.x += 0.012;
+        g.position.y = 1.6 + Math.sin(time * 0.0055 + i * Math.PI) * 0.28;
       });
 
-      river.position.y = -0.25 + Math.sin(time * 0.002) * 0.03;
+      // -------------------------------------------------------
+      // River gentle wave
+      // -------------------------------------------------------
+      river.position.y = -0.25 + Math.sin(time * 0.0025) * 0.04;
 
       controls.update();
       renderer.render(scene, camera);

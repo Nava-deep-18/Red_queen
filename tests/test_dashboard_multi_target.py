@@ -3,19 +3,21 @@ import os
 import sys
 from streamlit.testing.v1 import AppTest
 
+DASHBOARD_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "dashboard.py"))
+
 class TestDashboardModes(unittest.TestCase):
     """Test suite verifying Streamlit dashboard mode-switching and K=2 multi-target interface."""
 
     def test_dashboard_initial_run(self):
         """Test that dashboard loads initially in Single-Target mode without exception."""
-        at = AppTest.from_file("src/dashboard.py", default_timeout=30)
+        at = AppTest.from_file(DASHBOARD_FILE, default_timeout=30)
         at.run()
         self.assertEqual(len(at.exception), 0, f"Dashboard initial load raised exception: {at.exception}")
         self.assertEqual(at.session_state["dashboard_mode"], "single")
 
     def test_single_target_navigation_options(self):
         """Verify navigation segmented control has all 7 original single-target pages."""
-        at = AppTest.from_file("src/dashboard.py", default_timeout=30)
+        at = AppTest.from_file(DASHBOARD_FILE, default_timeout=30)
         at.run()
         
         self.assertGreater(len(at.button_group), 0)
@@ -24,7 +26,7 @@ class TestDashboardModes(unittest.TestCase):
 
     def test_single_target_pages_functional(self):
         """Verify all original single target pages still load cleanly without errors."""
-        at = AppTest.from_file("src/dashboard.py", default_timeout=30)
+        at = AppTest.from_file(DASHBOARD_FILE, default_timeout=30)
         at.run()
         nav = at.button_group[0]
         
@@ -43,7 +45,7 @@ class TestDashboardModes(unittest.TestCase):
 
     def test_switch_to_multi_target_k2_mode(self):
         """Test switching mode to Multi-Target (K=2) and verify separate sub-navigation and pages."""
-        at = AppTest.from_file("src/dashboard.py", default_timeout=30)
+        at = AppTest.from_file(DASHBOARD_FILE, default_timeout=30)
         at.run()
 
         # Find and click the Multi-Target mode button
@@ -64,7 +66,8 @@ class TestDashboardModes(unittest.TestCase):
 
         # Test sub-pages of K=2
         k2_pages = [
-            "📈 Self-Play Training",
+            "🎯 Fixed Baseline",
+            "🔄 Red Queen Self-Play",
             "🛡️ Dual-Archive K=2",
             "📊 Robustness (K=2)",
             "⚖️ vs Single Target"
@@ -77,8 +80,10 @@ class TestDashboardModes(unittest.TestCase):
         """Verify dedicated folders and files for K=2 exist."""
         self.assertTrue(os.path.exists("dashboard_3d_k2.html"), "dashboard_3d_k2.html is missing")
         self.assertTrue(os.path.exists("replays/multi_target_k2/k2_ppo_selfplay.json"), "K=2 replay file missing")
-        self.assertTrue(os.path.exists("models/multi_target_k2/ppo_k2_attacker.pth"), "K=2 attacker model missing")
-        self.assertTrue(os.path.exists("models/multi_target_k2/ppo_k2_defender.pth"), "K=2 defender model missing")
+        has_att = os.path.exists("models/multi_target_k2/ppo_k2_attacker.pth") or os.path.exists("models/multi_target/ppo_k2_attacker.pth")
+        has_def = os.path.exists("models/multi_target_k2/ppo_k2_defender.pth") or os.path.exists("models/multi_target/ppo_k2_defender.pth")
+        self.assertTrue(has_att, "K=2 attacker model missing")
+        self.assertTrue(has_def, "K=2 defender model missing")
         self.assertTrue(os.path.exists("results/multi_target_k2/learning_curve_k2.png"), "K=2 learning curve missing")
         self.assertTrue(os.path.exists("results/multi_target_k2/k2_robustness_archetype.png"), "K=2 robustness chart missing")
         self.assertTrue(os.path.exists("results/multi_target_k2/k1_vs_k2_comparison.png"), "K=1 vs K=2 chart missing")

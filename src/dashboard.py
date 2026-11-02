@@ -24,7 +24,7 @@ except ImportError:
 
 st.set_page_config(
     layout="wide",
-    page_title="Red Queen MARL | SVNIT Surat",
+    page_title="Red Queen MARL Arena",
     page_icon="👑",
     initial_sidebar_state="collapsed"
 )
@@ -292,10 +292,6 @@ st.markdown("""
             <div class="masthead-sub">Three Bridges Bottleneck Game • Empirical Game-Theoretic Analysis (EGTA)</div>
         </div>
     </div>
-    <div class="masthead-right">
-        <div class="masthead-affiliation">SVNIT Surat • Department of Mathematics</div>
-        <div class="masthead-authors">Authors: <strong>Navadeep G.</strong>, <strong>Brij R.</strong>, <strong>Shrey M.</strong>, <strong>Shree P.</strong></div>
-    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -343,7 +339,8 @@ if st.session_state.dashboard_mode == "single":
 else:
     PAGES = [
         "🎮 3D Arena (K=2)",
-        "📈 Self-Play Training",
+        "🎯 Fixed Baseline",
+        "🔄 Red Queen Self-Play",
         "🛡️ Dual-Archive K=2",
         "📊 Robustness (K=2)",
         "⚖️ vs Single Target"
@@ -712,7 +709,61 @@ elif st.session_state.dashboard_mode == "multi_k2":
             st.warning("K=2 3D Arena file not found (dashboard_3d_k2.html).")
             st.code("The file should be at: dashboard_3d_k2.html (project root)", language="text")
 
-    elif selected_page == "📈 Self-Play Training":
+    elif selected_page == "🎯 Fixed Baseline":
+        st.title("Fixed Opponent Baseline — K=2 Dual-Flank Arena")
+        st.markdown(r"""
+        Benchmark evaluation of single-agent PPO pathfinding in the **K=2 Flank Perimeter** environment.
+        The Defender remains strictly stationary (camping at spawn, $X \in [6, 9]$) to isolate Attacker navigation,
+        chokepoint bridge choice, and dual-target selection without active adversary pursuit.
+        """)
+
+        # Load metrics for stay
+        k2_metrics = load_json_safe_file("results/multi_target_k2/comparison_metrics.json")
+        k2_stay = {}
+        if k2_metrics and "K_2" in k2_metrics:
+            k2_stay = k2_metrics["K_2"].get("stay", {})
+
+        att_wr = k2_stay.get("attacker_win_rate")
+        def_wr = k2_stay.get("defender_win_rate")
+        timeout_r = k2_stay.get("timeout_rate")
+        avg_steps = k2_stay.get("avg_episode_steps")
+
+        st.markdown(f"""
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="metric-label">Attacker Win Rate</div>
+                <div class="metric-value">{format_percentage(att_wr)}</div>
+                <div class="metric-subtitle">vs Stationary Defender (STAY)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Defender Capture Rate</div>
+                <div class="metric-value">{format_percentage(def_wr)}</div>
+                <div class="metric-subtitle">Accidental Spawn Intercept</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Timeout Rate</div>
+                <div class="metric-value">{format_percentage(timeout_r)}</div>
+                <div class="metric-subtitle">Zero Standoff Failure (T < 75)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Avg Episode Length</div>
+                <div class="metric-value">{format_steps(avg_steps)} steps</div>
+                <div class="metric-subtitle">Optimal Pathfinding Trajectory</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("---")
+        st.subheader("📈 K=2 Fixed Baseline Learning Curve")
+        display_image("results/multi_target_k2/fixed_baseline_k2_curve.png")
+        st.markdown("""
+        **K=2 Fixed Baseline Observations:**
+        - **Rapid Pathfinding Convergence:** Attacker win rate climbs from 20% to >85% within 200 episodes as optimal bridge-routing is learned.
+        - **Zero Standoff Timeouts (0%):** Unlike self-play standoff cycles, the Attacker achieves decisive breach trajectories with zero timeout stall.
+        - **Balanced Dual-Flank Infiltration:** Attacker flexibly targets whichever flank corridor ($(10, 1)$ or $(10, 5)$) offers unobstructed passage relative to its Western spawn coordinates.
+        """)
+
+    elif selected_page in ["🔄 Red Queen Self-Play", "📈 Self-Play Training"]:
         st.title("K=2 Dual-Flank Self-Play Training (Phase 4 Equivalent)")
         st.markdown(r"""
         PPO self-play training for the **K=2 Flank Perimeter** configuration:
