@@ -243,6 +243,149 @@ python -m http.server 8000
 
 ---
 
+## 🎯 Multiple Targets Environment
+
+### 1. Overview
+* **Original Single-Target Environment (`ArenaEnv`):** The baseline Three Bridges arena tasks the Attacker with breaching a single static chokepoint target (the Citadel) positioned at coordinates $(X=10, Y=3)$ on the Eastern boundary. Because the target is unique and situated directly in line with the Center Bridge ($Y=3$), the Defender can establish a stationary or localized chokepoint blockade, leaving little ambiguity regarding the Attacker's ultimate destination.
+* **Multiple Targets Extension (`MultiTargetArenaEnv`):** The extended environment introduces configurable target frontiers with $K$ simultaneous target attractors on the Eastern front ($X=10$), supporting configurations $K \in \{1, 2, 3, 5\}$. In particular, the primary multi-target benchmark focuses on the **$K=2$ Flank Perimeter** setup with targets at $(10, 1)$ (North Flank) and $(10, 5)$ (South Flank), as well as $K=3$ (bridge-aligned perimeter) and $K=5$ (saturated frontier).
+* **Why Multi-Target Increases Complexity:** Multi-target scaling fundamentally alters the strategic game:
+  - **Spatial Defensive Dilemma:** A single defender moving at speed parity ($1\text{ cell/step}$) cannot simultaneously cover multiple disjoint target locations separated by up to 4 vertical grid cells. Defending one flank corridor inherently leaves the opposite river exit vulnerable.
+  - **Attacker Feints & Opportunism:** The Attacker needs to breach **only one** active target to win. This rewards dynamic mixed strategies: committing towards one corridor to draw defensive coverage, then pivoting across the river basin to exploit the unprotected target.
+  - **Zero-Sum Equilibrium Breakdown:** As target count scales, defensive interception rates collapse, providing an empirical benchmark for perimeter defense and multi-goal spatial decision-making.
+
+---
+
+### 2. Environment Changes
+The environment changes are implemented in [`src/multi_target_environment.py`](src/multi_target_environment.py):
+
+* **Target Representation & Configuration:**
+  - Standard target coordinates are indexed by target count $K$ via `PRESET_TARGETS`:
+    - $K=1$: `[(10, 3)]` (Central Citadel)
+    - $K=2$: `[(10, 1), (10, 5)]` (North and South Flank Corridors)
+    - $K=3$: `[(10, 1), (10, 3), (10, 5)]` (Aligned with all 3 bridge exits)
+    - $K=5$: `[(10, 0), (10, 1), (10, 3), (10, 5), (10, 6)]` (All obstacle-free tiles on row $X=10$)
+  - Maximum target capacity is fixed at `MAX_TARGETS = 5`.
+* **State Representation (19-Dimensional Box):**
+  - To maintain fixed neural network layer dimensions regardless of active target count, observations are projected into a **19-dimensional continuous normalized observation vector** $S \in [0, 1]^{19}$:
+    $$S = \big[ \bar{x}_A,\, \bar{y}_A,\, \bar{x}_D,\, \bar{y}_D,\, (\bar{x}_{t_i},\, \bar{y}_{t_i},\, a_{t_i})_{i=0}^4 \big]$$
+  - Coordinates are min-max normalized by grid dimensions: $\bar{x} = \frac{x}{10}$, $\bar{y} = \frac{y}{6}$.
+  - Each target slot includes an **Active Indicator** $a_{t_i} \in \{0.0, 1.0\}$. Inactive slots ($i \ge K$) are zero-padded: $(0.0, 0.0, 0.0)$.
+  - For single-target backward compatibility, `get_state_single(target_idx)` extracts a 6D projection $[\bar{x}_A, \bar{y}_A, \bar{x}_D, \bar{y}_D, \bar{x}_t, \bar{y}_t]$.
+* **Attacker Interaction:**
+  - The Attacker moves via discrete actions (`UP`, `DOWN`, `LEFT`, `RIGHT`, `STAY`).
+  - Breaching **ANY** active target $t \in \mathcal{T}$ triggers immediate termination and victory.
+* **Defender Interaction:**
+  - The Defender attempts to intercept the Attacker via either:
+    1. **Same-tile collision:** Both agents occupy identical coordinates at step conclusion.
+    2. **Crossing-swap:** Agents cross paths across adjacent tiles in a single simultaneous step.
+* **Terminal Priority Axiom:**
+  - If the Attacker reaches an active target on the exact step it is intercepted, **the Target Breach takes strict precedence**:
+    $$\text{Terminal Outcome} = \begin{cases} 
+    \text{Attacker Win } (+10.0, -10.0) & \text{if } p_A \in \mathcal{T} \\
+    \text{Defender Intercept } (-10.0, +10.0) & \text{if } \text{Caught} \land p_A \notin \mathcal{T} \\
+    \text{Timeout } (0.0, 0.0) & \text{if } t \ge T_{\max} = 75 \text{ steps}
+    \end{cases}$$
+* **Zero-Sum Multi-Target Potential Shaping:**
+  - Generalizes Ng et al. (1999) potential shaping to multiple targets using the bridge-aware shortest route to the **nearest active target**:
+    $$D_{\text{multi}}(p) = \min_{t \in \mathcal{T}} D_{\text{route}}(p, t)$$
+  - With bridge-routing distance:
+    $$D_{\text{route}}(p, t) = \begin{cases}
+    \min\limits_{b_y \in \{1, 3, 5\}} \Big(|x - 4| + |y - b_y| + (t_x - 4) + |b_y - t_y|\Big) & \text{if } x \le 4 \\
+    |x - t_x| + |y - t_y| & \text{if } x > 4
+    \end{cases}$$
+  - Symmetrically applied ($+F$ Attacker, $-F$ Defender) with $\gamma = 0.99$, guaranteeing $R_A(s, a) + R_D(s, a) \equiv 0.000000$ at every step.
+
+---
+
+### 3. Single Target vs Multiple Targets
+
+| Feature | Single-Target Baseline (`ArenaEnv`) | Multiple Targets Extension (`MultiTargetArenaEnv`) |
+|---|---|---|
+| **Primary Code File** | [`src/environment.py`](src/environment.py) | [`src/multi_target_environment.py`](src/multi_target_environment.py) |
+| **Target Count ($K$)** | $K = 1$ (fixed) | Configurable $K \in \{1, 2, 3, 5\}$ |
+| **Target Locations** | Single Citadel at $(10, 3)$ | $K=2$: $(10, 1)$ and $(10, 5)$; $K=3$: $(10, 1), (10, 3), (10, 5)$; $K=5$: Full Eastern front |
+| **Observation Dimension** | 6D vector: $[x_A, y_A, x_D, y_D, x_T, y_T]$ | 19D vector: $[x_A, y_A, x_D, y_D, (x_{t_i}, y_{t_i}, a_{t_i})_{i=0}^4]$ |
+| **Target Identification** | Implicit (only one coordinate) | Explicit per-slot activation flag ($a_{t_i} \in \{0.0, 1.0\}$) |
+| **Attacker Goal** | Reach $(10, 3)$ | Reach **any** active target $t \in \mathcal{T}$ |
+| **Defensive Coverage** | Chokepoint anchor at Center Bridge / Citadel | Split perimeter dilemma across disjoint flanks |
+| **Reward Shaping Potential** | Distance to single target $(10, 3)$ | Distance to nearest active target $\min_{t \in \mathcal{T}} D_{\text{route}}(p, t)$ |
+| **Zero-Sum Guarantee** | $R_A + R_D \equiv 0.0$ | $R_A + R_D \equiv 0.0$ |
+| **Maximum Steps ($T_{\max}$)** | 75 steps | 75 steps |
+| **Action Space** | Discrete 5 (`UP`, `DOWN`, `LEFT`, `RIGHT`, `STAY`) | Discrete 5 (`UP`, `DOWN`, `LEFT`, `RIGHT`, `STAY`) |
+
+---
+
+### 4. Training and Evaluation
+
+#### Dedicated Scripts:
+* **Training Script:** [`src/train_multi_target.py`](src/train_multi_target.py)
+* **Evaluation Script:** [`src/evaluate_multi_target.py`](src/evaluate_multi_target.py)
+* **Cross-Comparison Script:** [`src/compare_single_vs_multi_target.py`](src/compare_single_vs_multi_target.py)
+* **Replay Generator:** [`src/generate_k2_replays.py`](src/generate_k2_replays.py)
+
+#### Algorithms & Neural Architecture:
+* **Algorithm:** Decentralized Proximal Policy Optimization (PPO) in simultaneous self-play.
+* **Network Structure:** Actor-Critic networks with two hidden layers $[64, 64]$ and $\tanh$ activations, accepting 19-dimensional observation inputs.
+* **Hyperparameters:** Discount factor $\gamma = 0.99$, PPO clip $\epsilon = 0.2$, learning rates $\alpha_{\text{actor}} = 0.001$, $\alpha_{\text{critic}} = 0.002$, batch updates every 20 complete episodes over 1,500 total training episodes per configuration.
+
+#### Execution Commands:
+```bash
+# 1. Train PPO policies on Multi-Target Arena (default K=2, 1,500 episodes)
+python src/train_multi_target.py --k 2 --episodes 1500 --update-every 20
+
+# Train other target configurations
+python src/train_multi_target.py --k 1 --episodes 1500
+python src/train_multi_target.py --k 3 --episodes 1500
+python src/train_multi_target.py --k 5 --episodes 1500
+
+# 2. Run deterministic scientific evaluation suite (500 paired episodes per archetype)
+python src/evaluate_multi_target.py --k 2 --episodes 500
+
+# 3. Run comprehensive Single-Target vs Multi-Target comparison benchmark
+python src/compare_single_vs_multi_target.py --episodes 500
+
+# 4. Generate K=2 3D WebGL trajectory replays (for Dual-Archive, Red Queen, and Fixed baseline)
+python src/generate_k2_replays.py
+```
+
+#### Results & Artifact Locations:
+* Checkpoints: `models/multi_target/` (e.g., `ppo_k2_attacker.pth`, `ppo_k2_defender.pth`) and `models/multi_target_k2/`
+* Replays: `replays/multi_target_k2/` (`k2_dual_archive.json`, `k2_red_queen.json`, `k2_fixed_opponent.json`)
+* Performance Metrics & Plots: `results/multi_target/` and `results/multi_target_k2/` (`comparison_metrics.json`, `learning_curve_k2.png`, `k2_robustness_archetype.png`, `k1_vs_k2_comparison.png`)
+
+---
+
+### 5. Dashboard Visualization
+
+The interactive Streamlit dashboard ([`src/dashboard.py`](src/dashboard.py)) features a top-level mode switcher:
+
+1. **Top-Level Mode Selector:**
+   - **`⚔️ Single Target (Citadel)`**: Displays the original 7 single-target analysis pages (3D Arena, Game Theory, Baseline PPO, Naive Self-Play, Dual-Archive, Robustness EGTA, Applications).
+   - **`🎯 Multi-Target (K=2 Flank Perimeter)`**: Dedicated sub-dashboard focused on the $K=2$ multi-target system.
+
+2. **Multi-Target K=2 Sub-Pages:**
+   - **`🎮 3D Arena (K=2)`:** Embedded WebGL / Three.js tactical arena ([`dashboard_3d_k2.html`](dashboard_3d_k2.html)) rendering **two animated yellow gem targets** with dedicated point lights at $(10, 1)$ and $(10, 5)$, with mode switching between Dual-Archive, Naive Self-Play, and Fixed Baseline.
+   - **`📈 Self-Play Training`:** Training dynamics and learning curves for $K=2$ dual-flank self-play (Phase 4 equivalent).
+   - **`🛡️ Dual-Archive K=2`:** Analysis of Dual-Archive co-evolutionary regularized training.
+   - **`📊 Robustness (K=2)`:** Empirical robustness breakdown against 4 key defender archetypes (North Camper, Center Camper, South Camper, River Patroller) with 95% Wilson Score confidence intervals.
+   - **`⚖️ vs Single Target`:** Side-by-side comparative visualization and metric shifts ($K=1$ vs $K=2$).
+
+To launch the dashboard:
+```bash
+streamlit run src/dashboard.py
+```
+
+---
+
+### 6. Research Significance
+Extending the Red Queen AI Arena to multiple targets deepens the empirical study of competitive co-evolution in several ways:
+* **Overcoming Chokepoint Overfitting:** In single-target environments, defenders easily overfit to a single chokepoint. Multiple targets force both agents to formulate mixed spatial strategies over distributed attractors.
+* **Target Saturation & Defender Capacity Limits:** Demonstrates that as $K$ increases, a single defender suffers acute capacity collapse (attacker win rate increases from ~54% at $K=1$ to >71% at $K=5$), highlighting the mathematical limits of solitary defenders in asymmetric security games.
+* **Zero-Shot Transfer Failure:** Pretrained single-target policies (6D) fail when transferred zero-shot to multi-target perimeters (win rates dropping from 54% to 24–39%), showing that single-goal policies lack spatial representations for opportunistic flank pivoting.
+* **Theoretical Payoff Invariance:** Validates that potential-based zero-sum reward shaping generalizes cleanly to complex multi-goal topologies without altering underlying Nash equilibria.
+
+---
+
 ## 📚 Citation & Academic Submission
 
 If utilizing this codebase or experimental framework, please refer to:

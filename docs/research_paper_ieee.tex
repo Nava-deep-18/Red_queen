@@ -181,6 +181,27 @@ R_A(s, a_1, a_2) + R_D(s, a_1, a_2) \equiv 0.000000, \quad \forall s, s' \in \ma
 \end{equation}
 By Devlin and Kudenko \cite{devlin2011theoretical}, symmetric potential shaping does not alter the Nash equilibrium strategy set of the underlying stochastic game.
 
+\subsection{Multiple Target Environment}
+\label{subsec:multiple_target_env}
+To examine whether defensive chokepoint strategies and competitive co-evolution generalize beyond single-destination domains, the environment formulation extends to multi-target perimeters. In the original setting, defensive anchoring is facilitated by a unique, static chokepoint target situated at $(10, 3)$. Under the multiple-target extension, the environment defines a configurable target frontier across the eastern boundary ($X=10$), supporting configurations $K \in \{1, 2, 3, 5\}$ active targets. In particular, the dual-flank configuration ($K=2$) places simultaneous target attractors at $(10, 1)$ (North Flank) and $(10, 5)$ (South Flank), directly aligned with the outer bridge exits.
+
+The transition from a single target to multiple targets introduces three fundamental structural modifications to the underlying Markov game:
+\begin{enumerate}
+    \item \textbf{19-Dimensional Normalized State Space:} To guarantee neural architecture invariance across varying target counts $K$, observations are expanded from the baseline 6-dimensional coordinate vector to a fixed 19-dimensional continuous observation vector:
+    \begin{equation}
+    \bm{s} = \big[ \tilde{x}_A, \tilde{y}_A, \tilde{x}_D, \tilde{y}_D, (\tilde{x}_{T_i}, \tilde{y}_{T_i}, a_{T_i})_{i=0}^4 \big]^T \in [0, 1]^{19}
+    \end{equation}
+    where spatial coordinates are normalized by grid bounds $\tilde{x} = x / 10$ and $\tilde{y} = y / 6$, and $a_{T_i} \in \{0.0, 1.0\}$ serves as an explicit binary activation flag. Unused target slots ($i \ge K$) are strictly zero-padded with $(0.0, 0.0, 0.0)$, enabling identical policy networks to process any valid perimeter configuration.
+    \item \textbf{Attacker-Defender Spatial Asymmetry:} The termination criteria enforce an asymmetric spatial objective: the Attacker achieves decisive victory upon breaching \textit{any} active target $T_k \in \mathcal{T}$, whereas the solitary Defender must concurrently deny all $K$ targets. Because outer targets are separated by 4 vertical cells ($Y=1$ to $Y=5$), a single Defender moving at unit speed parity cannot simultaneously cover both corridors. Defending one flank inherently leaves the opposite river exit vulnerable to exploitation.
+    \item \textbf{Multi-Target Potential Shaping Invariance:} To maintain dense exploration guidance without introducing non-zero-sum distortion, the bridge-aware distance potential generalizes to the minimum route over all active targets:
+    \begin{equation}
+    \Phi_{\text{multi}}(\bm{p}) = -\min_{T_k \in \mathcal{T}} D_{\text{route}}(\bm{p}, T_k)
+    \end{equation}
+    where $D_{\text{route}}(\bm{p}, T_k)$ computes the shortest bridge-crossing path. Symmetrically allocating shaping bonuses ($+F$ to Attacker, $-F$ to Defender) under discount factor $\gamma = 0.99$ preserves strict zero-sum conservation ($R_A + R_D \equiv 0.000000$), guaranteeing that the underlying Nash equilibria remain mathematically invariant under Ng et al. \cite{ng1999policy}.
+\end{enumerate}
+
+This multi-target formulation transforms the strategic game from localized chokepoint blocking into a dynamic problem of spatial misdirection and perimeter defense. It enables rigorous comparative evaluation between single-aperture bottleneck games ($K=1$) and distributed target allocation ($K=2$), highlighting how defender capacity limits and attacker diversionary feints influence co-evolutionary stability.
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.92\columnwidth]{phase6_archive_curve.png}
