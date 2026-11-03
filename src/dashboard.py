@@ -830,8 +830,8 @@ elif st.session_state.dashboard_mode == "multi_k2":
         st.subheader("📈 Dual-Archive Training Dynamics & Co-Evolution")
         
         # Display Phase 6 archive curve from docs
-        if os.path.exists("docs/phase6_archive_curve.png"):
-            display_image("docs/phase6_archive_curve.png")
+        if os.path.exists("results/multi_target_k2/dual_archive_k2_curve.png"):
+            display_image("results/multi_target_k2/dual_archive_k2_curve.png")
         elif os.path.exists("results/multi_target_k2/learning_curve_k2.png"):
             display_image("results/multi_target_k2/learning_curve_k2.png")
 

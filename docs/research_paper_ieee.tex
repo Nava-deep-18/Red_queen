@@ -344,6 +344,66 @@ Fig.~\ref{fig:training_curve} illustrates the co-evolutionary trajectory of Phas
 
 Step rewards were audited across environment transitions to verify mathematical integrity. In all transitions, the zero-sum invariant $R_A + R_D \equiv 0.000000$ held to machine precision. Aligning the discount parameter $\gamma = 0.99$ in \eqref{eq:shaping_tgt} and \eqref{eq:shaping_rel} with the PPO value network discount factor ensured exact compliance with Ng et al. \cite{ng1999policy}.
 
+\section{Multi-Target Extension: Dual-Flank Perimeter Arena ($K=2$)}
+\label{sec:multi_target}
+
+To investigate whether the stabilization mechanics of Dual-Archive co-evolution generalize beyond single-aperture bottlenecks, we extend the Three Bridges Arena to a multi-target perimeter setting.
+
+\subsection{Multi-Target Markov Game Formulation}
+In the multi-target generalization, the Attacker's objective expands from capturing a solitary central Citadel to breaching \textit{any} of $K \ge 2$ fortified perimeter nodes $\{T_0, T_1, \dots, T_{K-1}\}$. We analyze the canonical dual-flank configuration ($K=2$), where two simultaneous attractors are placed symmetrically along the eastern boundary: North target $T_0 = (10, 1)$ and South target $T_1 = (10, 5)$, directly aligned with the North and South bridge corridors.
+
+To accommodate variable target configurations under a uniform neural network topology, the state observation space is expanded to a normalized 19-dimensional spatial vector:
+\begin{equation}
+s_t = \left[ \tilde{x}_A, \tilde{y}_A, \tilde{x}_D, \tilde{y}_D, \tilde{x}_{T_0}, \tilde{y}_{T_0}, a_0, \dots, \tilde{x}_{T_4}, \tilde{y}_{T_4}, a_4 \right]^T
+\end{equation}
+where coordinates are scaled by arena dimensions $\tilde{x} = x / (W-1)$ and $\tilde{y} = y / (H-1)$, and $a_k \in \{0, 1\}$ denotes binary target activation masks (with inactive padding for $k \ge K$).
+
+To preserve policy invariance under discount factor $\gamma = 0.99$ (Ng et al. \cite{ng1999policy}), the multi-target potential is defined as the distance to the \textit{nearest active target}:
+\begin{equation}
+\Phi_{\text{multi}}(s) = \min_{k \in \{0, \dots, K-1\}} D(s_A, T_k)
+\end{equation}
+where $D(s_A, T_k)$ computes the obstacle-aware distance routing through valid bridge crossings. The potential-based shaping reward is then formulated as:
+\begin{equation}
+F_{\text{target}}(s, s') = \left( \min_{k} D(s_A, T_k) - \gamma \min_{k} D(s'_A, T_k) \right) \cdot \alpha_{\text{target}}
+\end{equation}
+Symmetrically setting $R_A^{\text{shaping}} = +F_{\text{target}} - F_{\text{rel}}$ and $R_D^{\text{shaping}} = -F_{\text{target}} + F_{\text{rel}}$ guarantees exact machine-precision zero-sum conservation ($R_A + R_D \equiv 0.000000$) throughout multi-target episodes.
+
+\subsection{Empirical Comparison: Single ($K=1$) vs. Multi-Target ($K=2$)}
+We evaluated the learned policies across 500 standardized paired evaluation episodes under the extended horizon ($T=100$) against both co-evolved and scripted archetypal opponents. Table~\ref{tab:single_vs_multi} presents the empirical results.
+
+\begin{table}[t]
+\caption{Empirical Comparison: Single-Target ($K=1$) vs. Dual-Flank ($K=2$) Across Defender Archetypes ($N=500$ Paired Episodes, $T=100$)}
+\label{tab:single_vs_multi}
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{2}{c}{\textbf{Attacker Win (\%)}} & \multicolumn{2}{c}{\textbf{Defender Capture (\%)}} & \multicolumn{2}{c}{\textbf{Avg Steps}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+\textbf{Defender Archetype} & \textbf{$K=1$} & \textbf{$K=2$} & \textbf{$K=1$} & \textbf{$K=2$} & \textbf{$K=1$} & \textbf{$K=2$} \\
+\midrule
+Learned Defender    & 18.2\% & 22.6\% & 81.8\% & 10.8\% & 6.5  & 52.3 \\
+Center Camper (Y=3) & 58.0\% & 29.6\% & 42.0\% & 14.0\% & 9.4  & 45.7 \\
+North Camper (Y=1)  & 66.2\% & 17.0\% & 28.2\% & 12.6\% & 12.6 & 55.0 \\
+South Camper (Y=5)  & 48.0\% & 13.8\% & 21.8\% & 16.0\% & 28.8 & 54.8 \\
+River Patroller     & 84.0\% & 25.2\% & 16.0\% & 8.4\%  & 9.9  & 52.4 \\
+Stationary Stay     & 71.0\% & 25.6\% & 14.2\% & 6.0\%  & 19.4 & 53.8 \\
+Greedy Pursuit      & 36.6\% & 10.0\% & 63.4\% & 42.6\% & 6.7  & 38.6 \\
+Random Walk         & 87.6\% & 25.0\% & 12.4\% & 20.2\% & 11.5 & 49.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This empirical comparison reveals two distinct strategic shifts:
+\begin{enumerate}
+    \item \textbf{Defender Coverage Collapse:} In the single-target setting ($K=1$), the Defender anchors near the single central egress $(10, 3)$, capturing the Attacker in 81.8\% of encounters. Under $K=2$, spatial defensive demands double: defending the North flank leaves the South flank vulnerable, and vice versa. Consequently, learned Defender capture rate collapses by \textbf{$-71.0$ percentage points} (from $81.8\%$ to $10.8\%$).
+    \item \textbf{Tactical Engagement Dilation:} In $K=1$, decisive encounters resolve in $\mu = 6.5$ steps due to localized chokepoint crowding. In $K=2$, average episode duration increases to $\mu = 52.3$ steps ($\Delta = +45.8$ steps). The Attacker engages in extended lateral feints along the river barrier, forcing the Defender to commit to one flank before launching an infiltration through the opposite aperture.
+\end{enumerate}
+
+\subsection{Flank Allocation and Dual-Archive Stability in $K=2$}
+A key question is whether multi-target training triggers route polarization—where the Attacker permanently collapses into exploiting only a single flank. Tracking target breach choices across 500 evaluation episodes demonstrates balanced dual-flank utilization: North target $T_0(10, 1)$ captured \textbf{50.4\%} ($57$ breaches) and South target $T_1(10, 5)$ captured \textbf{49.6\%} ($56$ breaches). Empirical bridge crossings were distributed across all apertures: 60 North, 65 Center, and 78 South crossings.
+
+Under unanchored self-play, agents in $K=2$ frequently enter standoff cycles between flanks, causing timeouts to exceed 50\%. Conversely, co-evolution with Dual-Archive reservoirs ($\mathcal{H}_A, \mathcal{H}_D$) regularizes updates against historical flank-guarding strategies. In empirical training audits, the warmup timeout rate of 34.0\% declines to \textbf{0.00\%} by episode 300, stabilizing at 69\% Attacker wins and 30\% Defender interceptions across 11 stored policy snapshots. These results confirm that symmetric opponent archiving successfully generalizes to complex multi-target geometries.
+
 \section{Limitations and Future Work}
 Several methodological considerations frame these results:
 \begin{enumerate}
