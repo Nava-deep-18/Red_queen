@@ -743,7 +743,7 @@ elif st.session_state.dashboard_mode == "multi_k2":
             <div class="metric-card">
                 <div class="metric-label">Timeout Rate</div>
                 <div class="metric-value">{format_percentage(timeout_r)}</div>
-                <div class="metric-subtitle">Zero Standoff Failure (T < 75)</div>
+                <div class="metric-subtitle">Zero Standoff Failure (T < 100)</div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">Avg Episode Length</div>
@@ -799,7 +799,7 @@ elif st.session_state.dashboard_mode == "multi_k2":
             <div class="metric-card">
                 <div class="metric-label">Timeout Rate</div>
                 <div class="metric-value">{format_percentage(timeout_r)}</div>
-                <div class="metric-subtitle">Standoff Cycles (T ≥ 75)</div>
+                <div class="metric-subtitle">Standoff Cycles (T ≥ 100)</div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">Avg Episode Length</div>
@@ -884,7 +884,7 @@ elif st.session_state.dashboard_mode == "multi_k2":
                 <div class="metric-card">
                     <div class="metric-label">Timeout Rate</div>
                     <div class="metric-value">{format_percentage(timeout_r)}</div>
-                    <div class="metric-subtitle">Unforced Standoffs (T ≥ 75)</div>
+                    <div class="metric-subtitle">Unforced Standoffs (T ≥ 100)</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-label">Avg Episode Length</div>

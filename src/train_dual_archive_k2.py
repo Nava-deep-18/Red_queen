@@ -27,6 +27,7 @@ def train_dual_archive_k2(
     random.seed(seed)
 
     os.makedirs(save_dir, exist_ok=True)
+    os.makedirs("models/multi_target", exist_ok=True)
     os.makedirs("models/archive_k2", exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
 

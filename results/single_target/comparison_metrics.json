@@ -5,14 +5,14 @@
       10,
       3
     ],
-    "attacker_win_rate": 0.182,
-    "attacker_ci_95": 0.03377871419555296,
-    "defender_win_rate": 0.818,
-    "defender_ci_95": 0.03377871419555296,
+    "attacker_win_rate": 0.5,
+    "attacker_ci_95": 0.04365953083492584,
+    "defender_win_rate": 0.5,
+    "defender_ci_95": 0.04365953083492584,
     "timeout_rate": 0.0,
-    "avg_episode_steps": 6.478,
-    "std_episode_steps": 2.9545754348129276,
-    "sem_episode_steps": 0.13213263033785408
+    "avg_episode_steps": 8.504,
+    "std_episode_steps": 2.351591801312464,
+    "sem_episode_steps": 0.10516638246131696
   },
   "stay": {
     "num_episodes": 500,
@@ -20,14 +20,14 @@
       10,
       3
     ],
-    "attacker_win_rate": 0.71,
-    "attacker_ci_95": 0.03965441590207092,
-    "defender_win_rate": 0.142,
-    "defender_ci_95": 0.030600715887550107,
-    "timeout_rate": 0.148,
-    "avg_episode_steps": 19.374,
-    "std_episode_steps": 23.258592476760068,
-    "sem_episode_steps": 1.040155876780014
+    "attacker_win_rate": 0.762,
+    "attacker_ci_95": 0.037239239036708824,
+    "defender_win_rate": 0.17,
+    "defender_ci_95": 0.032896269625499276,
+    "timeout_rate": 0.068,
+    "avg_episode_steps": 15.74,
+    "std_episode_steps": 22.83962346449696,
+    "sem_episode_steps": 1.021419012942289
   },
   "random": {
     "num_episodes": 500,
@@ -35,14 +35,14 @@
       10,
       3
     ],
-    "attacker_win_rate": 0.876,
-    "attacker_ci_95": 0.02892119343803348,
-    "defender_win_rate": 0.124,
-    "defender_ci_95": 0.02892119343803348,
+    "attacker_win_rate": 0.836,
+    "attacker_ci_95": 0.03243345319752111,
+    "defender_win_rate": 0.164,
+    "defender_ci_95": 0.032433453197521105,
     "timeout_rate": 0.0,
-    "avg_episode_steps": 11.47,
-    "std_episode_steps": 6.644177902494786,
-    "sem_episode_steps": 0.29713666889160617
+    "avg_episode_steps": 10.57,
+    "std_episode_steps": 4.220082937573621,
+    "sem_episode_steps": 0.18872784638203235
   },
   "pursuit": {
     "num_episodes": 500,
@@ -50,14 +50,14 @@
       10,
       3
     ],
-    "attacker_win_rate": 0.366,
-    "attacker_ci_95": 0.042074824432108464,
-    "defender_win_rate": 0.634,
-    "defender_ci_95": 0.042074824432108464,
+    "attacker_win_rate": 0.354,
+    "attacker_ci_95": 0.0417716107623698,
+    "defender_win_rate": 0.646,
+    "defender_ci_95": 0.0417716107623698,
     "timeout_rate": 0.0,
-    "avg_episode_steps": 6.686,
-    "std_episode_steps": 3.2813722739122424,
-    "sem_episode_steps": 0.14674742927901666
+    "avg_episode_steps": 6.47,
+    "std_episode_steps": 3.1599208850855747,
+    "sem_episode_steps": 0.14131595805145292
   },
   "north_camper": {
     "num_episodes": 500,
@@ -65,14 +65,14 @@
       10,
       3
     ],
-    "attacker_win_rate": 0.662,
-    "attacker_ci_95": 0.04132287301114467,
-    "defender_win_rate": 0.282,
-    "defender_ci_95": 0.039326391396444074,
-    "timeout_rate": 0.056,
-    "avg_episode_steps": 12.608,
-    "std_episode_steps": 15.346997621684835,
-    "sem_episode_steps": 0.6863385986522978
+    "attacker_win_rate": 0.516,
+    "attacker_ci_95": 0.043637341954943946,
+    "defender_win_rate": 0.258,
+    "defender_ci_95": 0.03824958927835182,
+    "timeout_rate": 0.226,
+    "avg_episode_steps": 29.186,
+    "std_episode_steps": 38.30664960551888,
+    "sem_episode_steps": 1.7131254501641142
   },
   "center_camper": {
     "num_episodes": 500,
@@ -80,14 +80,14 @@
       10,
       3
     ],
-    "attacker_win_rate": 0.58,
-    "attacker_ci_95": 0.04310138207642079,
-    "defender_win_rate": 0.42,
-    "defender_ci_95": 0.04310138207642079,
+    "attacker_win_rate": 0.564,
+    "attacker_ci_95": 0.04330314440540976,
+    "defender_win_rate": 0.436,
+    "defender_ci_95": 0.04330314440540976,
     "timeout_rate": 0.0,
-    "avg_episode_steps": 9.398,
-    "std_episode_steps": 2.410725202091686,
-    "sem_episode_steps": 0.10781090853897855
+    "avg_episode_steps": 9.106,
+    "std_episode_steps": 2.5287870610235257,
+    "sem_episode_steps": 0.11309079538141024
   },
   "south_camper": {
     "num_episodes": 500,
@@ -95,14 +95,14 @@
       10,
       3
     ],
-    "attacker_win_rate": 0.48,
-    "attacker_ci_95": 0.043624855750323994,
-    "defender_win_rate": 0.218,
-    "defender_ci_95": 0.036116998506591606,
-    "timeout_rate": 0.302,
-    "avg_episode_steps": 28.76,
-    "std_episode_steps": 30.482493336339793,
-    "sem_episode_steps": 1.3632185444748026
+    "attacker_win_rate": 0.708,
+    "attacker_ci_95": 0.039734094691171444,
+    "defender_win_rate": 0.292,
+    "defender_ci_95": 0.039734094691171444,
+    "timeout_rate": 0.0,
+    "avg_episode_steps": 8.96,
+    "std_episode_steps": 2.207804339156892,
+    "sem_episode_steps": 0.09873601166747621
   },
   "patroller": {
     "num_episodes": 500,
@@ -110,13 +110,13 @@
       10,
       3
     ],
-    "attacker_win_rate": 0.84,
-    "attacker_ci_95": 0.03211649287092792,
-    "defender_win_rate": 0.16,
-    "defender_ci_95": 0.03211649287092791,
+    "attacker_win_rate": 0.828,
+    "attacker_ci_95": 0.03304726990014798,
+    "defender_win_rate": 0.172,
+    "defender_ci_95": 0.033047269900147974,
     "timeout_rate": 0.0,
-    "avg_episode_steps": 9.936,
-    "std_episode_steps": 2.1512563770968813,
-    "sem_episode_steps": 0.09620710992437097
+    "avg_episode_steps": 9.678,
+    "std_episode_steps": 2.075166499344089,
+    "sem_episode_steps": 0.09280426714327311
   }
 }

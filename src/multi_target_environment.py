@@ -62,7 +62,7 @@ class MultiTargetArenaEnv(ParallelEnv):
         self,
         width: int = 11,
         height: int = 7,
-        max_steps: int = 75,
+        max_steps: int = 100,
         num_targets: int = 1,
         target_positions: Optional[List[Tuple[int, int]]] = None,
     ):

@@ -84,7 +84,7 @@ Each coordinate is normalized to the range `[0,1]`: x coordinates are divided by
 - If the players end on the same cell, the Defender catches the Attacker.
 - Swapping cells in the same step also counts as a catch.
 - Reaching the target has priority over capture if both flags would otherwise apply.
-- If neither event happens within **75 steps**, the episode is truncated and counted as a timeout/draw.
+- If neither event happens within **100 steps**, the episode is truncated and counted as a timeout/draw.
 - Terminal rewards are `(+10,-10)` for an Attacker win, `(-10,+10)` for a Defender win, and `(0,0)` for a timeout.
 
 Being adjacent does not itself count as a capture. Capture requires the same final cell or a crossing swap. Because both players move simultaneously, an Attacker next to the Defender can move away in the same step.

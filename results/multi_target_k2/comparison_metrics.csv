@@ -1,0 +1,10 @@
+k_targets,attacker_type,defender_type,episodes,att_win_rate,att_ci_95,def_win_rate,def_ci_95,timeout_rate,avg_steps,sem_steps
+2,marl_ppo_19d,learned_defender,500,0.684,0.0406,0.316,0.0406,0.0,8.72,0.086
+2,marl_ppo_19d,stay,500,0.85,0.0313,0.15,0.0313,0.0,9.14,0.079
+2,marl_ppo_19d,random,500,0.83,0.0329,0.17,0.0329,0.0,9.01,0.086
+2,marl_ppo_19d,pursuit,500,0.344,0.0415,0.656,0.0415,0.0,6.24,0.128
+2,marl_ppo_19d,north_camper,500,0.742,0.0382,0.258,0.0382,0.0,8.91,0.093
+2,marl_ppo_19d,center_camper,500,0.744,0.0382,0.256,0.0382,0.0,8.42,0.077
+2,marl_ppo_19d,south_camper,500,0.526,0.0436,0.474,0.0436,0.0,8.34,0.104
+2,marl_ppo_19d,patroller,500,0.832,0.0327,0.168,0.0327,0.0,9.0,0.081
+2,baseline_phase4_6d_transfer,pursuit,500,0.248,0.0378,0.752,0.0378,0.0,6.8,0.157

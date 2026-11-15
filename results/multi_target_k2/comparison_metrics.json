@@ -13,22 +13,22 @@
           5
         ]
       ],
-      "attacker_win_rate": 0.226,
-      "attacker_ci_95": 0.03657995763701433,
-      "defender_win_rate": 0.108,
-      "defender_ci_95": 0.02726643500514766,
-      "timeout_rate": 0.666,
-      "avg_episode_steps": 52.252,
-      "std_episode_steps": 32.15656225407187,
-      "sem_episode_steps": 1.4380851824561713,
+      "attacker_win_rate": 0.684,
+      "attacker_ci_95": 0.040619992119576814,
+      "defender_win_rate": 0.316,
+      "defender_ci_95": 0.040619992119576814,
+      "timeout_rate": 0.0,
+      "avg_episode_steps": 8.722,
+      "std_episode_steps": 1.918519220649092,
+      "sem_episode_steps": 0.08579878787022575,
       "target_breach_distribution": {
-        "0": 57,
-        "1": 56
+        "0": 128,
+        "1": 214
       },
       "bridge_crossing_distribution": {
-        "north": 60,
-        "center": 65,
-        "south": 78
+        "north": 131,
+        "center": 128,
+        "south": 241
       }
     },
     "stay": {
@@ -44,22 +44,22 @@
           5
         ]
       ],
-      "attacker_win_rate": 0.256,
-      "attacker_ci_95": 0.03815332826613811,
-      "defender_win_rate": 0.06,
-      "defender_ci_95": 0.021006746152647277,
-      "timeout_rate": 0.684,
-      "avg_episode_steps": 53.824,
-      "std_episode_steps": 31.166087723678118,
-      "sem_episode_steps": 1.393789814857319,
+      "attacker_win_rate": 0.85,
+      "attacker_ci_95": 0.03129313625443363,
+      "defender_win_rate": 0.15,
+      "defender_ci_95": 0.03129313625443363,
+      "timeout_rate": 0.0,
+      "avg_episode_steps": 9.142,
+      "std_episode_steps": 1.7725224963311468,
+      "sem_episode_steps": 0.07926961586888132,
       "target_breach_distribution": {
-        "0": 57,
-        "1": 71
+        "0": 114,
+        "1": 311
       },
       "bridge_crossing_distribution": {
-        "north": 65,
-        "center": 70,
-        "south": 83
+        "north": 131,
+        "center": 128,
+        "south": 241
       }
     },
     "random": {
@@ -75,22 +75,22 @@
           5
         ]
       ],
-      "attacker_win_rate": 0.25,
-      "attacker_ci_95": 0.037858280468455546,
-      "defender_win_rate": 0.202,
-      "defender_ci_95": 0.03513147608874699,
-      "timeout_rate": 0.548,
-      "avg_episode_steps": 49.492,
-      "std_episode_steps": 31.119028519540898,
-      "sem_episode_steps": 1.3916852632689618,
+      "attacker_win_rate": 0.83,
+      "attacker_ci_95": 0.032896269625499276,
+      "defender_win_rate": 0.17,
+      "defender_ci_95": 0.032896269625499276,
+      "timeout_rate": 0.0,
+      "avg_episode_steps": 9.006,
+      "std_episode_steps": 1.9188444439297316,
+      "sem_episode_steps": 0.08581333229749327,
       "target_breach_distribution": {
-        "0": 55,
-        "1": 70
+        "0": 112,
+        "1": 303
       },
       "bridge_crossing_distribution": {
-        "north": 64,
-        "center": 70,
-        "south": 83
+        "north": 131,
+        "center": 128,
+        "south": 239
       }
     },
     "pursuit": {
@@ -106,22 +106,22 @@
           5
         ]
       ],
-      "attacker_win_rate": 0.1,
-      "attacker_ci_95": 0.02637266078764124,
-      "defender_win_rate": 0.426,
-      "defender_ci_95": 0.043182410398885894,
-      "timeout_rate": 0.474,
-      "avg_episode_steps": 38.556,
-      "std_episode_steps": 34.664836131157465,
-      "sem_episode_steps": 1.550258600363178,
+      "attacker_win_rate": 0.344,
+      "attacker_ci_95": 0.041497188878753956,
+      "defender_win_rate": 0.656,
+      "defender_ci_95": 0.041497188878753956,
+      "timeout_rate": 0.0,
+      "avg_episode_steps": 6.238,
+      "std_episode_steps": 2.8617050861330906,
+      "sem_episode_steps": 0.12797934208300962,
       "target_breach_distribution": {
-        "0": 22,
-        "1": 28
+        "0": 31,
+        "1": 141
       },
       "bridge_crossing_distribution": {
-        "north": 55,
-        "center": 58,
-        "south": 76
+        "north": 115,
+        "center": 111,
+        "south": 220
       }
     },
     "north_camper": {
@@ -137,22 +137,22 @@
           5
         ]
       ],
-      "attacker_win_rate": 0.17,
-      "attacker_ci_95": 0.032896269625499276,
-      "defender_win_rate": 0.126,
-      "defender_ci_95": 0.029116750427630025,
-      "timeout_rate": 0.704,
-      "avg_episode_steps": 54.974,
-      "std_episode_steps": 30.898888717881107,
-      "sem_episode_steps": 1.3818403120476694,
+      "attacker_win_rate": 0.742,
+      "attacker_ci_95": 0.03824958927835182,
+      "defender_win_rate": 0.258,
+      "defender_ci_95": 0.03824958927835182,
+      "timeout_rate": 0.0,
+      "avg_episode_steps": 8.906,
+      "std_episode_steps": 2.084505696802002,
+      "sem_episode_steps": 0.09322192875069685,
       "target_breach_distribution": {
         "0": 2,
-        "1": 83
+        "1": 369
       },
       "bridge_crossing_distribution": {
-        "north": 65,
-        "center": 70,
-        "south": 83
+        "north": 131,
+        "center": 128,
+        "south": 241
       }
     },
     "center_camper": {
@@ -168,22 +168,22 @@
           5
         ]
       ],
-      "attacker_win_rate": 0.296,
-      "attacker_ci_95": 0.039890698741721096,
-      "defender_win_rate": 0.14,
-      "defender_ci_95": 0.03042266165548474,
-      "timeout_rate": 0.564,
-      "avg_episode_steps": 45.684,
-      "std_episode_steps": 33.35949855738242,
-      "sem_episode_steps": 1.4918821293922653,
+      "attacker_win_rate": 0.744,
+      "attacker_ci_95": 0.03815332826613811,
+      "defender_win_rate": 0.256,
+      "defender_ci_95": 0.03815332826613811,
+      "timeout_rate": 0.0,
+      "avg_episode_steps": 8.424,
+      "std_episode_steps": 1.7147081384305611,
+      "sem_episode_steps": 0.07668407918205708,
       "target_breach_distribution": {
-        "0": 65,
-        "1": 83
+        "0": 131,
+        "1": 241
       },
       "bridge_crossing_distribution": {
-        "north": 65,
-        "center": 70,
-        "south": 83
+        "north": 131,
+        "center": 128,
+        "south": 241
       }
     },
     "south_camper": {
@@ -199,22 +199,22 @@
           5
         ]
       ],
-      "attacker_win_rate": 0.138,
-      "attacker_ci_95": 0.030242558418689648,
-      "defender_win_rate": 0.16,
-      "defender_ci_95": 0.03211649287092791,
-      "timeout_rate": 0.702,
-      "avg_episode_steps": 54.762,
-      "std_episode_steps": 31.077602159754864,
-      "sem_episode_steps": 1.389832620138123,
+      "attacker_win_rate": 0.526,
+      "attacker_ci_95": 0.04360091386346143,
+      "defender_win_rate": 0.474,
+      "defender_ci_95": 0.04360091386346143,
+      "timeout_rate": 0.0,
+      "avg_episode_steps": 8.342,
+      "std_episode_steps": 2.3171180375630414,
+      "sem_episode_steps": 0.10362466887763742,
       "target_breach_distribution": {
-        "0": 65,
-        "1": 4
+        "0": 131,
+        "1": 132
       },
       "bridge_crossing_distribution": {
-        "north": 65,
-        "center": 70,
-        "south": 83
+        "north": 131,
+        "center": 128,
+        "south": 241
       }
     },
     "patroller": {
@@ -230,22 +230,22 @@
           5
         ]
       ],
-      "attacker_win_rate": 0.252,
-      "attacker_ci_95": 0.0379576819341818,
-      "defender_win_rate": 0.084,
-      "defender_ci_95": 0.024428041786651516,
-      "timeout_rate": 0.664,
-      "avg_episode_steps": 52.418,
-      "std_episode_steps": 31.758389064938417,
-      "sem_episode_steps": 1.4202783361017657,
+      "attacker_win_rate": 0.832,
+      "attacker_ci_95": 0.03274364870969759,
+      "defender_win_rate": 0.168,
+      "defender_ci_95": 0.032743648709697586,
+      "timeout_rate": 0.0,
+      "avg_episode_steps": 9.004,
+      "std_episode_steps": 1.8209843491913926,
+      "sem_episode_steps": 0.08143689581510336,
       "target_breach_distribution": {
-        "0": 57,
-        "1": 69
+        "0": 115,
+        "1": 301
       },
       "bridge_crossing_distribution": {
-        "north": 65,
-        "center": 70,
-        "south": 83
+        "north": 131,
+        "center": 128,
+        "south": 241
       }
     },
     "transfer_phase4_vs_pursuit": {
@@ -261,22 +261,22 @@
           5
         ]
       ],
-      "attacker_win_rate": 0.244,
-      "attacker_ci_95": 0.037553662343967516,
-      "defender_win_rate": 0.756,
-      "defender_ci_95": 0.037553662343967516,
+      "attacker_win_rate": 0.248,
+      "attacker_ci_95": 0.03775781575210871,
+      "defender_win_rate": 0.752,
+      "defender_ci_95": 0.03775781575210871,
       "timeout_rate": 0.0,
-      "avg_episode_steps": 6.948,
-      "std_episode_steps": 3.6311562896686227,
-      "sem_episode_steps": 0.16239024601249916,
+      "avg_episode_steps": 6.796,
+      "std_episode_steps": 3.5108950425781744,
+      "sem_episode_steps": 0.15701199954143633,
       "target_breach_distribution": {
-        "0": 75,
-        "1": 47
+        "0": 40,
+        "1": 84
       },
       "bridge_crossing_distribution": {
-        "north": 145,
-        "center": 176,
-        "south": 105
+        "north": 124,
+        "center": 197,
+        "south": 116
       }
     }
   }

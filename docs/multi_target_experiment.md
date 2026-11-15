@@ -56,7 +56,7 @@ At each step, candidate transitions are resolved under two termination condition
 
 **Terminal Priority Axiom:**  
 If an Attacker reaches any target $t \in \mathcal{T}$ on step $t$ while simultaneously colliding with or crossing the Defender, **the Target Breach takes strict precedence**:
-$$\text{Outcome} = \begin{cases} \text{Attacker Win } (+10, -10) & \text{if } p_{\text{att}} \in \mathcal{T} \\ \text{Defender Intercept } (-10, +10) & \text{if } \text{Caught} \land p_{\text{att}} \notin \mathcal{T} \\ \text{Timeout } (0, 0) & \text{if } t \ge T_{\max} = 75 \end{cases}$$
+$$\text{Outcome} = \begin{cases} \text{Attacker Win } (+10, -10) & \text{if } p_{\text{att}} \in \mathcal{T} \\ \text{Defender Intercept } (-10, +10) & \text{if } \text{Caught} \land p_{\text{att}} \notin \mathcal{T} \\ \text{Timeout } (0, 0) & \text{if } t \ge T_{\max} = 100 \end{cases}$$
 
 This formal priority reflects standard operational realities: once an infiltrator reaches an operational asset or critical server, the breach has occurred regardless of simultaneous capture.
 

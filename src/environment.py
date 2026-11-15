@@ -50,7 +50,7 @@ class ArenaEnv(ParallelEnv):
         "name": "three_bridges_arena_v0",
     }
 
-    def __init__(self, width: int = 11, height: int = 7, max_steps: int = 75, render_mode: Optional[str] = None):
+    def __init__(self, width: int = 11, height: int = 7, max_steps: int = 100, render_mode: Optional[str] = None):
         super().__init__()
         self.width = width
         self.height = height

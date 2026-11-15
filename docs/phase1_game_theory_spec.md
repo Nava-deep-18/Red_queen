@@ -103,7 +103,7 @@ The environment is strictly zero-sum: $\text{Payoff}(A) + \text{Payoff}(D) = 0$.
 | :--- | :--- | :---: | :---: |
 | **Citadel Secured** | Attacker reaches $(10, 3)$ | **$+10.0$** | **$-10.0$** |
 | **Attacker Intercepted** | Attacker pos $==$ Defender pos | **$-10.0$** | **$+10.0$** |
-| **Timeout Draw** | $75$ steps elapsed | **$0.0$** | **$0.0$** |
+| **Timeout Draw** | $100$ steps elapsed | **$0.0$** | **$0.0$** |
 
 ### Symmetric Potential-Based Zero-Sum Reward Shaping:
 To guide reinforcement learning without introducing strategic bias toward any specific bridge while strictly preserving zero-sum Markov game dynamics (Ng et al. 1999; Devlin & Kudenko 2011), the agents calculate a symmetric distance potential $D(x, y)$:
