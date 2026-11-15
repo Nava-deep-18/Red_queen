@@ -2,9 +2,11 @@ import os
 import sys
 import copy
 import random
+import argparse
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+from typing import Optional
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
@@ -13,25 +15,32 @@ from multi_target_environment import MultiTargetArenaEnv, STATE_DIM
 from agents.ppo import PPOAgent
 
 
-def train_dual_archive_k2(
+def train_dual_archive(
+    k: int = 2,
     num_episodes: int = 600,
     warmup_episodes: int = 100,
     archive_interval: int = 50,
     update_every_episodes: int = 20,
     seed: int = 42,
-    save_dir: str = "models/multi_target_k2",
-    results_dir: str = "results/multi_target_k2",
+    save_dir: Optional[str] = None,
+    results_dir: Optional[str] = None,
 ):
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
 
+    if save_dir is None:
+        save_dir = f"models/multi_target_k{k}"
+    if results_dir is None:
+        results_dir = f"results/multi_target_k{k}"
+
+    archive_dir = f"models/archive_k{k}"
     os.makedirs(save_dir, exist_ok=True)
     os.makedirs("models/multi_target", exist_ok=True)
-    os.makedirs("models/archive_k2", exist_ok=True)
+    os.makedirs(archive_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
 
-    env = MultiTargetArenaEnv(num_targets=2)
+    env = MultiTargetArenaEnv(num_targets=k)
     state_dim = STATE_DIM  # 19
     action_dim = 5
 
@@ -49,7 +58,7 @@ def train_dual_archive_k2(
     recent_timeouts = []
 
     print("=" * 70)
-    print("  Starting Dual-Archive Co-Evolution Training (K=2 Dual-Flank Arena)")
+    print(f"  Starting Dual-Archive Co-Evolution Training (K={k} Arena, Targets: {[tuple(t) for t in env.targets]})")
     print(f"  Episodes: {num_episodes} | Warmup: {warmup_episodes} | Snapshot every: {archive_interval}")
     print("  Historical Opponent Regularization: 60% Self-Play, 20% Past Def, 20% Past Att")
     print("=" * 70)
@@ -127,8 +136,8 @@ def train_dual_archive_k2(
             def_w = copy.deepcopy(defender.policy.state_dict())
             attacker_archive.append(att_w)
             defender_archive.append(def_w)
-            torch.save(att_w, f"models/archive_k2/attacker_ep{episode + 1}.pth")
-            torch.save(def_w, f"models/archive_k2/defender_ep{episode + 1}.pth")
+            torch.save(att_w, os.path.join(archive_dir, f"attacker_ep{episode + 1}.pth"))
+            torch.save(def_w, os.path.join(archive_dir, f"defender_ep{episode + 1}.pth"))
 
         att_win = 1 if info["reached_target"] else 0
         def_win = 1 if info["caught"] and not info["reached_target"] else 0
@@ -158,14 +167,14 @@ def train_dual_archive_k2(
     defender.update()
 
     # Save trained checkpoints
-    att_save_path = os.path.join(save_dir, "ppo_k2_dual_archive_attacker.pth")
-    def_save_path = os.path.join(save_dir, "ppo_k2_dual_archive_defender.pth")
+    att_save_path = os.path.join(save_dir, f"ppo_k{k}_dual_archive_attacker.pth")
+    def_save_path = os.path.join(save_dir, f"ppo_k{k}_dual_archive_defender.pth")
     torch.save(attacker.policy.state_dict(), att_save_path)
     torch.save(defender.policy.state_dict(), def_save_path)
     # Also update active multi-target models
-    torch.save(attacker.policy.state_dict(), "models/multi_target/ppo_k2_attacker.pth")
-    torch.save(defender.policy.state_dict(), "models/multi_target/ppo_k2_defender.pth")
-    print(f"Saved Dual-Archive K=2 models to {att_save_path} and {def_save_path}")
+    torch.save(attacker.policy.state_dict(), f"models/multi_target/ppo_k{k}_attacker.pth")
+    torch.save(defender.policy.state_dict(), f"models/multi_target/ppo_k{k}_defender.pth")
+    print(f"Saved Dual-Archive K={k} models to {att_save_path} and {def_save_path}")
 
     # Plot synchronized Dual-Archive Learning Curve
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9.0, 5.0), sharex=True, facecolor="#090d16")
@@ -179,7 +188,7 @@ def train_dual_archive_k2(
     ax1.plot(att_win_rates, label="Attacker Win Rate (Target Breached)", color="#ef4444", linewidth=1.6)
     ax1.plot(def_win_rates, label="Defender Win Rate (Intercept)", color="#38bdf8", linewidth=1.6)
     ax1.axvspan(0, warmup_episodes, color="gray", alpha=0.15, label=f"Warmup Window (N < {warmup_episodes})")
-    ax1.set_title("Dual-Archive Co-Evolution Training Dynamics (K=2 Dual-Flank Perimeter)", color="#f8fafc", fontsize=11, fontweight="bold", pad=10)
+    ax1.set_title(f"Dual-Archive Co-Evolution Training Dynamics (K={k} Arena)", color="#f8fafc", fontsize=11, fontweight="bold", pad=10)
     ax1.set_ylabel("Win Rate (Rolling 100)", color="#94a3b8", fontsize=9.5)
     ax1.set_ylim(-0.02, 1.05)
     ax1.legend(facecolor="#090d16", edgecolor=(1, 1, 1, 0.15), labelcolor="#f8fafc", loc="upper right", fontsize=8.5)
@@ -193,12 +202,19 @@ def train_dual_archive_k2(
     ax2.legend(facecolor="#090d16", edgecolor=(1, 1, 1, 0.15), labelcolor="#f8fafc", loc="upper right", fontsize=8.5)
 
     plt.tight_layout()
-    curve_path = os.path.join(results_dir, "dual_archive_k2_curve.png")
+    curve_path = os.path.join(results_dir, f"dual_archive_k{k}_curve.png")
     plt.savefig(curve_path, dpi=130, facecolor=fig.get_facecolor(), bbox_inches="tight")
     plt.close()
-    print(f"Saved Dual-Archive K=2 curve to {curve_path}")
+    print(f"Saved Dual-Archive K={k} curve to {curve_path}")
+
+
+def train_dual_archive_k2(num_episodes: int = 600, **kwargs):
+    return train_dual_archive(k=2, num_episodes=num_episodes, **kwargs)
 
 
 if __name__ == "__main__":
-    train_dual_archive_k2()
-
+    parser = argparse.ArgumentParser(description="Train Dual-Archive Multi-Target PPO Agents.")
+    parser.add_argument("--k", type=int, default=2, help="Target count K (1, 2, 3, 5)")
+    parser.add_argument("--episodes", type=int, default=600, help="Training episodes")
+    args = parser.parse_args()
+    train_dual_archive(k=args.k, num_episodes=args.episodes)

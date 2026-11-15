@@ -343,7 +343,8 @@ else:
         "🔄 Red Queen Self-Play",
         "🛡️ Dual-Archive K=2",
         "📊 Robustness (K=2)",
-        "⚖️ vs Single Target"
+        "⚖️ vs Single Target",
+        "📈 K-Scaling Benchmark (K=1,2,3,5)"
     ]
 
 # Reset page selection when mode changes
@@ -1014,3 +1015,157 @@ elif st.session_state.dashboard_mode == "multi_k2":
                 st.info("Missing: `results/single_target/comparison_metrics.json`")
             if not k2_metrics:
                 st.info("Missing: `results/multi_target_k2/comparison_metrics.json`")
+
+    elif selected_page == "📈 K-Scaling Benchmark (K=1,2,3,5)":
+        st.title("📈 Multi-Target Scaling & Empirical Benchmark (K ∈ {1, 2, 3, 5})")
+        st.markdown("""
+        Empirical evaluation across varying target densities: **K=1 Citadel**, **K=2 Dual-Flank**, 
+        **K=3 Bridge-Front**, and **K=5 Full Eastern Frontier** under 500 paired trials per condition ($T=100$).
+        """)
+
+        multi_all = load_json_safe_file("results/multi_target/comparison_metrics.json")
+        single_metrics = load_json_safe_file("results/single_target/comparison_metrics.json")
+
+        st.markdown("""
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="metric-label">K=1 (Citadel)</div>
+                <div class="metric-value">50.0%</div>
+                <div class="metric-subtitle">Balanced Chokepoint Duel</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">K=2 (Dual-Flank)</div>
+                <div class="metric-value">68.4%</div>
+                <div class="metric-subtitle">Outer Flank Dispersion</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">K=3 (Bridge-Front)</div>
+                <div class="metric-value">97.6%</div>
+                <div class="metric-subtitle">Bridge Corridor Saturation</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">K=5 (Frontier)</div>
+                <div class="metric-value">89.2%</div>
+                <div class="metric-subtitle">Rational Path Infiltration</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        tab_global, tab_k2, tab_k3, tab_k5 = st.tabs([
+            "🌐 Cross-Frontier Scaling (All K)",
+            "⚔️ K=2 (Dual-Flank)",
+            "🏹 K=3 (Bridge-Front)",
+            "🏰 K=5 (Full Frontier)"
+        ])
+
+        with tab_global:
+            st.subheader("📊 Scaling Dynamics Across Target Counts (K ∈ {1, 2, 3, 5})")
+            
+            c1, c2 = st.columns(2)
+            with c1:
+                display_image("results/multi_target/attacker_win_rate_vs_targets.png")
+            with c2:
+                display_image("results/multi_target/defender_capture_rate_vs_targets.png")
+
+            c3, c4 = st.columns(2)
+            with c3:
+                display_image("results/multi_target/episode_duration_vs_targets.png")
+            with c4:
+                display_image("results/multi_target/target_choice_distribution.png")
+
+            st.subheader("🛡️ Defender Archetype Breakdown Across K")
+            display_image("results/multi_target/win_rate_by_defender_archetype.png")
+
+            st.markdown("---")
+            st.subheader("📋 Primary Scaling Benchmark Table")
+            summary_rows = [
+                {
+                    "Target Setup (K)": "K = 1 (Citadel Baseline)",
+                    "Attacker Win": "50.0% ± 4.4%",
+                    "Defender Capture": "50.0% ± 4.4%",
+                    "Timeout Rate": "0.0%",
+                    "Avg Steps": "8.5 ± 0.1",
+                    "Target Entropy (ρ_T)": "0.000",
+                    "Bridge Entropy (ρ_B)": "0.621",
+                    "EGTA Avg Win": "63.6%",
+                },
+                {
+                    "Target Setup (K)": "K = 2 (Dual-Flank Corridors)",
+                    "Attacker Win": "68.4% ± 4.1%",
+                    "Defender Capture": "31.6% ± 4.1%",
+                    "Timeout Rate": "0.0%",
+                    "Avg Steps": "8.7 ± 0.1",
+                    "Target Entropy (ρ_T)": "0.954",
+                    "Bridge Entropy (ρ_B)": "0.957",
+                    "EGTA Avg Win": "69.6%",
+                },
+                {
+                    "Target Setup (K)": "K = 3 (Bridge-Front Corridors)",
+                    "Attacker Win": "97.6% ± 1.4%",
+                    "Defender Capture": "2.4% ± 1.4%",
+                    "Timeout Rate": "0.0%",
+                    "Avg Steps": "9.0 ± 0.1",
+                    "Target Entropy (ρ_T)": "0.998",
+                    "Bridge Entropy (ρ_B)": "0.995",
+                    "EGTA Avg Win": "72.6%",
+                },
+                {
+                    "Target Setup (K)": "K = 5 (Full Eastern Frontier)",
+                    "Attacker Win": "89.2% ± 2.7%",
+                    "Defender Capture": "10.8% ± 2.7%",
+                    "Timeout Rate": "0.0%",
+                    "Avg Steps": "9.1 ± 0.1",
+                    "Target Entropy (ρ_T)": "0.621",
+                    "Bridge Entropy (ρ_B)": "0.975",
+                    "EGTA Avg Win": "72.1%",
+                },
+            ]
+            st.dataframe(pd.DataFrame(summary_rows), hide_index=True, use_container_width=True)
+
+            st.subheader("📋 Full Archetype Win Rate Matrix (%) Across K")
+            arch_full = [
+                ("learned_defender", "Learned PPO Defender"),
+                ("stay", "Stationary Stay"),
+                ("center_camper", "Center Camper (Y=3)"),
+                ("north_camper", "North Camper (Y=1)"),
+                ("south_camper", "South Camper (Y=5)"),
+                ("patroller", "River Patroller"),
+                ("random", "Random Walk"),
+                ("pursuit", "Greedy Pursuit"),
+            ]
+            arch_rows = []
+            for key, name in arch_full:
+                arch_rows.append({
+                    "Defender Archetype": name,
+                    "K=1 (Citadel)": f"{single_metrics.get(key, {}).get('attacker_win_rate', 0.0)*100.0:.1f}%" if single_metrics else "N/A",
+                    "K=2 (Dual-Flank)": f"{multi_all.get('K_2', {}).get(key, {}).get('attacker_win_rate', 0.0)*100.0:.1f}%" if multi_all else "N/A",
+                    "K=3 (Bridge-Front)": f"{multi_all.get('K_3', {}).get(key, {}).get('attacker_win_rate', 0.0)*100.0:.1f}%" if multi_all else "N/A",
+                    "K=5 (Full Frontier)": f"{multi_all.get('K_5', {}).get(key, {}).get('attacker_win_rate', 0.0)*100.0:.1f}%" if multi_all else "N/A",
+                })
+            st.dataframe(pd.DataFrame(arch_rows), hide_index=True, use_container_width=True)
+
+        with tab_k2:
+            st.subheader("⚔️ K=2 Dual-Flank vs Single-Target Comparison")
+            display_image("results/multi_target_k2/k1_vs_k2_comparison.png")
+            st.subheader("📊 K=2 Archetype Robustness")
+            display_image("results/multi_target_k2/k2_robustness_archetype.png")
+            st.subheader("📈 K=2 Dual-Archive Learning Curve")
+            display_image("results/multi_target_k2/dual_archive_k2_curve.png")
+
+        with tab_k3:
+            st.subheader("🏹 K=3 Bridge-Front vs Single-Target Comparison")
+            display_image("results/multi_target_k3/k1_vs_k3_comparison.png")
+            st.subheader("📊 K=3 Archetype Robustness")
+            display_image("results/multi_target_k3/k3_robustness_archetype.png")
+            st.subheader("📈 K=3 Dual-Archive Learning Curve")
+            display_image("results/multi_target_k3/dual_archive_k3_curve.png")
+
+        with tab_k5:
+            st.subheader("🏰 K=5 Full Frontier vs Single-Target Comparison")
+            display_image("results/multi_target_k5/k1_vs_k5_comparison.png")
+            st.subheader("📊 K=5 Archetype Robustness")
+            display_image("results/multi_target_k5/k5_robustness_archetype.png")
+            st.subheader("📈 K=5 Dual-Archive Learning Curve")
+            display_image("results/multi_target_k5/dual_archive_k5_curve.png")
