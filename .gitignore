@@ -8,3 +8,8 @@ models/
 BEGINNER_EXPLANATION_GUIDE.md
 BEGINNER_EXPLANATION_GUIDE.html
 beginner_explanation_guide.html
+*.fls
+*.log
+*.gz
+*.aux
+*fdb_latexmk
