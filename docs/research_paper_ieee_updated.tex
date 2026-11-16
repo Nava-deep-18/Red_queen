@@ -371,10 +371,10 @@ F_{\text{target}}(s, s') = \left( \min_{k} D(s_A, T_k) - \gamma \min_{k} D(s'_A,
 Symmetrically setting $R_A^{\text{shaping}} = +F_{\text{target}} - F_{\text{rel}}$ and $R_D^{\text{shaping}} = -F_{\text{target}} + F_{\text{rel}}$ guarantees exact machine-precision zero-sum conservation ($R_A + R_D \equiv 0.000000$) throughout multi-target episodes.
 
 \subsection{Target Scaling Evaluation ($K \in \{1, 2, 3, 5\}$)}
-We evaluated the learned policies across 500 standardized paired evaluation episodes under the extended 100-step horizon against both co-evolved and scripted archetypal opponents. Table~\ref{tab:attacker_k_scaling} and Table~\ref{tab:defender_k_scaling} report the Attacker infiltration win rates and Defender interception capture rates across target scales $K \in \{1, 2, 3, 5\}$.
+We evaluated each target setting over 500 episodes with a 100-step horizon. The settings use the central target for $K=1$, the north and south targets for $K=2$, the three bridge-aligned targets for $K=3$, and five open cells on the eastern edge for $K=5$. Table~\ref{tab:attacker_k_scaling} reports Attacker win rates, and Table~\ref{tab:defender_k_scaling} reports Defender capture rates for the same defender types and target counts.
 
 \begin{table}[t]
-\caption{Attacker Infiltration Win Rate (\%) Across Target Count ($K \in \{1, 2, 3, 5\}$, $N=500$, $T=100$)}
+\caption{Attacker Infiltration Win Rate (\%) Across Target Count ($K \in \{1,2,3,5\}$, $N=500$, $T=100$)}
 \label{tab:attacker_k_scaling}
 \centering
 \resizebox{\columnwidth}{!}{%
@@ -382,20 +382,21 @@ We evaluated the learned policies across 500 standardized paired evaluation epis
 \toprule
 \textbf{Defender Archetype} & \textbf{$K=1$} & \textbf{$K=2$} & \textbf{$K=3$} & \textbf{$K=5$} \\
 \midrule
-Learned Defender      & 50.0\% & 68.4\% & 97.6\% & 89.2\% \\
+Learned Defender & 50.0\% & 68.4\% & 97.6\% & 89.2\% \\
 Center Camper ($Y=3$) & 56.4\% & 74.4\% & 70.4\% & 69.4\% \\
-North Camper ($Y=1$)  & 51.6\% & 74.2\% & 62.6\% & 60.6\% \\
-South Camper ($Y=5$)  & 70.8\% & 52.6\% & 68.2\% & 71.2\% \\
-River Patroller       & 82.8\% & 83.2\% & 86.2\% & 86.2\% \\
-Stationary Stay       & 76.2\% & 85.0\% & 82.6\% & 82.6\% \\
-Greedy Pursuit        & 35.4\% & 34.4\% & 28.2\% & 30.8\% \\
-Random Walk           & 83.6\% & 83.0\% & 84.8\% & 87.2\% \\
+North Camper ($Y=1$) & 51.6\% & 74.2\% & 62.6\% & 60.6\% \\
+South Camper ($Y=5$) & 70.8\% & 52.6\% & 68.2\% & 71.2\% \\
+River Patroller & 82.8\% & 83.2\% & 86.2\% & 86.2\% \\
+Stationary Stay & 76.2\% & 85.0\% & 82.6\% & 82.6\% \\
+Greedy Pursuit & 35.4\% & 34.4\% & 28.2\% & 30.8\% \\
+Random Walk & 83.6\% & 83.0\% & 84.8\% & 87.2\% \\
 \bottomrule
 \end{tabular}%
 }
-\vspace{8pt}
+\end{table}
 
-\caption{Defender Interception Capture Rate (\%) Across Target Count ($K \in \{1, 2, 3, 5\}$, $N=500$, $T=100$)}
+\begin{table}[t]
+\caption{Defender Interception Capture Rate (\%) Across Target Count ($K \in \{1,2,3,5\}$, $N=500$, $T=100$)}
 \label{tab:defender_k_scaling}
 \centering
 \resizebox{\columnwidth}{!}{%
@@ -403,29 +404,32 @@ Random Walk           & 83.6\% & 83.0\% & 84.8\% & 87.2\% \\
 \toprule
 \textbf{Defender Archetype} & \textbf{$K=1$} & \textbf{$K=2$} & \textbf{$K=3$} & \textbf{$K=5$} \\
 \midrule
-Learned Defender      & 50.0\% & 31.6\% &  2.4\% & 10.8\% \\
+Learned Defender & 50.0\% & 31.6\% & 2.4\% & 10.8\% \\
 Center Camper ($Y=3$) & 43.6\% & 25.6\% & 29.6\% & 30.6\% \\
-North Camper ($Y=1$)  & 25.8\% & 25.8\% & 37.4\% & 39.4\% \\
-South Camper ($Y=5$)  & 29.2\% & 47.4\% & 31.8\% & 28.8\% \\
-River Patroller       & 17.2\% & 16.8\% & 13.8\% & 13.8\% \\
-Stationary Stay       & 17.0\% & 15.0\% & 17.4\% & 17.4\% \\
-Greedy Pursuit        & 64.6\% & 65.6\% & 71.8\% & 69.2\% \\
-Random Walk           & 16.4\% & 17.0\% & 15.2\% & 12.8\% \\
+North Camper ($Y=1$) & 25.8\% & 25.8\% & 37.4\% & 39.4\% \\
+South Camper ($Y=5$) & 29.2\% & 47.4\% & 31.8\% & 28.8\% \\
+River Patroller & 17.2\% & 16.8\% & 13.8\% & 13.8\% \\
+Stationary Stay & 17.0\% & 15.0\% & 17.4\% & 17.4\% \\
+Greedy Pursuit & 64.6\% & 65.6\% & 71.8\% & 69.2\% \\
+Random Walk & 16.4\% & 17.0\% & 15.2\% & 12.8\% \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-These empirical comparisons indicate two consistent patterns as target count scales:
-\begin{enumerate}
-    \item \textbf{Defender Coverage Dilemma Under Multi-Target Scaling:} In the single-target setting ($K=1$), the learned Defender achieves parity ($50.0\%$ capture rate, Table~\ref{tab:defender_k_scaling}). As the target count increases ($K=2, 3, 5$), defensive coverage demands multiply across available egress routes. Defending one corridor leaves remaining apertures exposed. Consequently, the learned Defender's capture rate declines to $31.6\%$ at $K=2$, $2.4\%$ at $K=3$, and $10.8\%$ at $K=5$, while Attacker infiltration win rate rises to $68.4\%$ ($K=2$), $97.6\%$ ($K=3$), and $89.2\%$ ($K=5$, Table~\ref{tab:attacker_k_scaling}).
-    \item \textbf{Camper Vulnerability vs. Dynamic Pursuit Robustness:} Scripted camping archetypes (Center Camper, North Camper, South Camper, River Patroller) experience declining interception rates as $K$ increases because static area coverage leaves alternative targets unmonitored ($60.6\%$--$74.4\%$ Attacker win rates across $K \ge 2$). In contrast, Greedy Pursuit maintains consistent capture efficacy across all scales ($64.6\%$ to $71.8\%$), since direct spatial tracking follows the Attacker regardless of target configuration.
-\end{enumerate}
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\columnwidth]{attacker_win_rate_by_targets.png}
+\caption{Attacker win rate against the learned Defender across target counts.}
+\label{fig:attacker_k_scaling}
+\end{figure}
 
-\subsection{Target Choices and Archive Training in $K=2$}
-In the 500-episode evaluation, the Attacker reached a target 113 times. Of those breaches, 57 (50.4 percent) were at the North target and 56 (49.6 percent) were at the South target. This split is balanced in this sample, but it does not show whether the policy will keep using both routes against other opponents. The recorded bridge-crossing counts were 60 North, 65 Center, and 78 South.
+The two tables show complementary outcomes for each defender type. Fig.~\ref{fig:attacker_k_scaling} plots the Attacker win rate against the learned Defender. It rises from $50.0\%$ at $K=1$ to $97.6\%$ at $K=3$, then falls to $89.2\%$ at $K=5$. The results are therefore not monotonic at every target count.
 
-During unanchored self-play, the agents sometimes repeated moves between the two flanks, and timeout rates exceeded 50\%. Archive training included older attacker and defender policies as opponents. In the training audit, the timeout rate fell from 34.0\% during warm-up to 0.00\% by episode 300. Across 11 saved policy snapshots, the attacker won 69\% of episodes and the defender caught it in 30\%. This is an initial result for the two-target setting; more training runs and opponents are needed to see whether it holds more broadly.
+\subsection{Route Use in the $K=2$ Evaluation}
+In the same 500-episode evaluation, the Attacker breached a target in 342 episodes. Of these breaches, 128 (37.4\%) were at the North target and 214 (62.6\%) were at the South target. The recorded bridge crossings were 131 North, 128 Center, and 241 South. These counts describe this evaluation run; they do not establish that the policy will use both targets equally against other opponents.
+
+A separate training audit reported that timeout rates fell from 34.0\% during warm-up to 0.00\% by episode 300. Across 11 saved policy snapshots, the attacker won 69\% of episodes and the defender caught it in 30\%. This training audit is separate from the 500-episode evaluation summarized in Tables~\ref{tab:attacker_k_scaling} and~\ref{tab:defender_k_scaling}.
 
 \section{Limitations and Future Work}
 Several methodological considerations frame these results:
